@@ -1,242 +1,259 @@
-(function(){
+(function () {
 
-    if(window.__uiPickerActive) return;
-    window.__uiPickerActive=true;
-
-    /* =========================
-    STATE
-    ========================= */
-
-    let pickerEnabled=false;
-    let highlightBox=null;
+    if (window.__uiPickerActive) return;
+    window.__uiPickerActive = true;
 
     /* =========================
-    STYLES
+       STATE
     ========================= */
 
-    const style=document.createElement("style");
+    let pickerEnabled = false;
+    let highlightBox = null;
 
-    style.innerHTML=`
+    /* =========================
+       STYLES
+    ========================= */
+
+    const style = document.createElement("style");
+
+    style.innerHTML = `
 
 :root{
---bg:#1e1e1e;
---panel:#252526;
---border:#3c3c3c;
---accent:#4f9cff;
---text:#e6e6e6;
---green:#6A9955;
---blue:#569CD6;
---orange:#CE9178;
---yellow:#DCDCAA;
+    --bg:#1e1e1e;
+    --panel:#252526;
+    --border:#3c3c3c;
+    --accent:#4f9cff;
+    --text:#e6e6e6;
+    --green:#6A9955;
+    --blue:#569CD6;
+    --orange:#CE9178;
+    --yellow:#DCDCAA;
 }
 
-/* picker toggle */
+/* =========================
+   PICKER BUTTON
+========================= */
 
 #ui-picker-toggle{
-position:fixed;
-bottom:20px;
-right:20px;
-z-index:2147483647;
-background:var(--accent);
-color:white;
-border:none;
-padding:12px 16px;
-border-radius:6px;
-cursor:pointer;
-font-size:14px;
-font-weight:600;
-box-shadow:0 4px 12px rgba(0,0,0,0.4);
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    z-index:2147483647;
+
+    background:var(--accent);
+    color:white;
+
+    border:none;
+    padding:12px 16px;
+    border-radius:6px;
+
+    cursor:pointer;
+
+    font-size:14px;
+    font-weight:600;
+
+    box-shadow:0 4px 12px rgba(0,0,0,0.4);
 }
 
-/* panel */
+/* =========================
+   PANEL
+========================= */
 
 #ui-picker-panel{
-position:fixed;
-top:30px;
-right:30px;
-width:520px;
-height:520px;
+    position:fixed;
+    top:30px;
+    right:30px;
 
-resize:both;
-overflow:auto;
+    width:520px;
+    height:520px;
 
-background:var(--panel);
-border:1px solid var(--border);
-border-radius:10px;
+    resize:both;
+    overflow:auto;
 
-color:var(--text);
-font-family:system-ui;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
 
-z-index:2147483647;
+    color:var(--text);
+    font-family:system-ui;
 
-box-shadow:0 10px 30px rgba(0,0,0,.6);
+    z-index:2147483647;
+
+    box-shadow:0 10px 30px rgba(0,0,0,.6);
 }
 
-/* header */
+/* =========================
+   HEADER
+========================= */
 
 .picker-header{
-padding:12px;
-border-bottom:1px solid var(--border);
-font-weight:700;
-font-size:15px;
+    padding:12px;
 
-cursor:grab;
+    border-bottom:1px solid var(--border);
 
-user-select:none;
+    font-weight:700;
+    font-size:15px;
 
-background:#2d2d2d;
+    cursor:grab;
+    user-select:none;
+
+    background:#2d2d2d;
 }
 
 .picker-header:active{
-cursor:grabbing;
+    cursor:grabbing;
 }
 
-/* tabs */
+/* =========================
+   TABS
+========================= */
 
 .picker-tabs{
-display:flex;
-border-bottom:1px solid var(--border);
+    display:flex;
+    border-bottom:1px solid var(--border);
 }
 
 .picker-tab{
-flex:1;
-padding:10px;
-text-align:center;
-cursor:pointer;
-font-size:13px;
-font-weight:600;
-transition:.2s;
+    flex:1;
+    padding:10px;
+
+    text-align:center;
+    cursor:pointer;
+
+    font-size:13px;
+    font-weight:600;
+
+    transition:.2s;
 }
 
 .picker-tab:hover{
-background:#2d2d2d;
+    background:#2d2d2d;
 }
 
 .picker-tab.active{
-background:var(--accent);
-color:white;
+    background:var(--accent);
+    color:white;
 }
 
-/* content */
+/* =========================
+   CONTENT
+========================= */
 
 .picker-content{
-padding:14px;
+    padding:14px;
 }
 
-/* sections */
+/* =========================
+   SECTIONS
+========================= */
 
 .section{
-margin-bottom:14px;
+    margin-bottom:14px;
 }
 
 .label{
-font-size:12px;
-opacity:.8;
-margin-bottom:5px;
-font-weight:600;
+    font-size:12px;
+    opacity:.8;
+    margin-bottom:5px;
+    font-weight:600;
 }
 
-/* textareas */
+/* =========================
+   TEXTAREAS
+========================= */
 
 .field{
-width:100%;
+    width:100%;
 
-background:#1b1b1b;
-border:1px solid #444;
+    background:#1b1b1b;
+    border:1px solid #444;
 
-color:#d4d4d4;
+    color:#d4d4d4;
 
-padding:10px;
-border-radius:6px;
+    padding:10px;
+    border-radius:6px;
 
-font-family:Consolas,monospace;
-font-size:14px;
+    font-family:Consolas,monospace;
+    font-size:14px;
 
-line-height:1.5;
+    line-height:1.5;
 
-white-space:pre;
+    white-space:pre;
 }
 
 /* dropdown */
 
 select.field{
-cursor:pointer;
+    cursor:pointer;
 }
 
-/* DOM tree */
+/* =========================
+   DOM TREE
+========================= */
 
 .tree{
-font-family:Consolas,monospace;
-font-size:13px;
-line-height:1.6;
+    font-family:Consolas,monospace;
+    font-size:13px;
+    line-height:1.6;
 
-background:#1b1b1b;
-padding:10px;
-border-radius:6px;
+    background:#1b1b1b;
+    padding:10px;
 
-overflow:auto;
+    border-radius:6px;
+
+    overflow:auto;
 }
 
 .tree-node{
-white-space:nowrap;
+    white-space:nowrap;
 }
 
 .tree-tag{
-color:#569CD6;
-font-weight:600;
+    color:#569CD6;
+    font-weight:600;
 }
 
 .tree-attr{
-color:#CE9178;
-}
-
-.tree-toggle{
-color:#ccc;
-cursor:pointer;
-margin-right:4px;
-}
-
-.tree-toggle-empty{
-display:inline-block;
-width:12px;
-}
-
-.tree-children{
-margin-left:12px;
+    color:#CE9178;
 }
 
 .tree-node:hover{
-background:#2d2d2d;
+    background:#2d2d2d;
 }
 
-.tree-selected{
-background:#264f78;
-border-left:4px solid #4f9cff;
-padding-left:6px;
-border-radius:4px;
+/* selected DOM element */
 
-font-weight:600;
+.tree-selected{
+    background:#264f78;
+    border-left:4px solid #4f9cff;
+    padding-left:6px;
+    border-radius:4px;
+
+    font-weight:600;
 }
 
 .tree-selected .tree-tag{
-color:#ffffff;
+    color:#ffffff;
 }
 
 .tree-selected::before{
-content:"▶";
-color:#4f9cff;
-margin-right:6px;
+    content:"▶";
+    color:#4f9cff;
+    margin-right:6px;
 }
 
-
-/* highlight box */
+/* =========================
+   PAGE HIGHLIGHT
+========================= */
 
 .ui-picker-highlight-box{
-position:fixed;
-pointer-events:none;
-border:3px solid var(--accent);
-background:rgba(79,156,255,.1);
-z-index:2147483646;
+    position:fixed;
+    pointer-events:none;
+
+    border:3px solid var(--accent);
+    background:rgba(79,156,255,.1);
+
+    z-index:2147483646;
 }
 
 `;
@@ -244,152 +261,155 @@ z-index:2147483646;
     document.head.appendChild(style);
 
     /* =========================
-    TOGGLE
+       TOGGLE BUTTON
     ========================= */
 
-    const toggle=document.createElement("button");
+    const toggle = document.createElement("button");
 
-    toggle.id="ui-picker-toggle";
-    toggle.textContent="Enable Picker";
+    toggle.id = "ui-picker-toggle";
+    toggle.textContent = "Enable Picker";
 
-    toggle.onclick=e=>{
+    toggle.onclick = (e) => {
 
         e.stopPropagation();
 
-        pickerEnabled=!pickerEnabled;
+        pickerEnabled = !pickerEnabled;
 
-        toggle.textContent=
-            pickerEnabled?"Disable Picker":"Enable Picker";
+        toggle.textContent =
+            pickerEnabled ? "Disable Picker" : "Enable Picker";
 
-        if(!pickerEnabled){
+        if (!pickerEnabled) {
 
             highlightBox?.remove();
-            highlightBox=null;
+            highlightBox = null;
 
             document.getElementById("ui-picker-panel")?.remove();
         }
-
     };
 
     document.body.appendChild(toggle);
 
     /* =========================
-    HIGHLIGHT
+       HIGHLIGHT ELEMENT
     ========================= */
 
-    function showHighlight(el){
+    function showHighlight(el) {
 
-        if(!highlightBox){
+        if (!highlightBox) {
 
-            highlightBox=document.createElement("div");
+            highlightBox = document.createElement("div");
 
-            highlightBox.style.position="fixed";
-            highlightBox.style.pointerEvents="none";
-            highlightBox.style.border="3px solid #4f9cff";
-            highlightBox.style.zIndex="2147483646";
+            highlightBox.style.position = "fixed";
+            highlightBox.style.pointerEvents = "none";
+            highlightBox.style.border = "3px solid #4f9cff";
+            highlightBox.style.zIndex = "2147483646";
 
             document.body.appendChild(highlightBox);
         }
 
-        const r=el.getBoundingClientRect();
+        const r = el.getBoundingClientRect();
 
-        highlightBox.style.top=r.top+"px";
-        highlightBox.style.left=r.left+"px";
-        highlightBox.style.width=r.width+"px";
-        highlightBox.style.height=r.height+"px";
+        highlightBox.style.top = r.top + "px";
+        highlightBox.style.left = r.left + "px";
+        highlightBox.style.width = r.width + "px";
+        highlightBox.style.height = r.height + "px";
     }
 
     /* =========================
-    LOCATORS
+       CSS LOCATOR
     ========================= */
 
-    function uniqueCss(el){
+    function uniqueCss(el) {
 
-        if(el.id) return "#"+CSS.escape(el.id);
+        if (el.id) return "#" + CSS.escape(el.id);
 
-        let path=[];
+        let path = [];
 
-        while(el && el.nodeType===1){
+        while (el && el.nodeType === 1) {
 
-            let sel=el.tagName.toLowerCase();
+            let sel = el.tagName.toLowerCase();
 
-            if(el.classList.length)
-                sel+="."+el.classList[0];
+            if (el.classList.length)
+                sel += "." + el.classList[0];
 
-            const siblings=[...el.parentNode.children]
-                .filter(e=>e.tagName===el.tagName);
+            const siblings = [...el.parentNode.children]
+                .filter(e => e.tagName === el.tagName);
 
-            if(siblings.length>1)
-                sel+=`:nth-of-type(${siblings.indexOf(el)+1})`;
+            if (siblings.length > 1)
+                sel += `:nth-of-type(${siblings.indexOf(el) + 1})`;
 
             path.unshift(sel);
 
-            const full=path.join(" > ");
+            const full = path.join(" > ");
 
-            if(document.querySelectorAll(full).length===1)
+            if (document.querySelectorAll(full).length === 1)
                 return full;
 
-            el=el.parentElement;
+            el = el.parentElement;
         }
 
         return path.join(" > ");
     }
 
-    function uniqueXPath(el){
+    /* =========================
+       XPATH
+    ========================= */
 
-        if(el.id) return `//*[@id="${el.id}"]`;
+    function uniqueXPath(el) {
 
-        let path=[];
+        if (el.id) return `//*[@id="${el.id}"]`;
 
-        while(el && el.nodeType===1){
+        let path = [];
 
-            let i=1;
-            let sib=el.previousSibling;
+        while (el && el.nodeType === 1) {
 
-            while(sib){
+            let i = 1;
+            let sib = el.previousSibling;
 
-                if(sib.nodeType===1 && sib.nodeName===el.nodeName)
+            while (sib) {
+
+                if (sib.nodeType === 1 && sib.nodeName === el.nodeName)
                     i++;
 
-                sib=sib.previousSibling;
+                sib = sib.previousSibling;
             }
 
             path.unshift(`${el.nodeName.toLowerCase()}[${i}]`);
 
-            el=el.parentNode;
+            el = el.parentNode;
         }
 
-        return "/"+path.join("/");
+        return "/" + path.join("/");
     }
 
     /* =========================
-    DOM TREE
+       DOM TREE
     ========================= */
 
-    function buildTree(el, selectedEl, depth = 0){
+    function buildTree(el, selectedEl, depth = 0) {
 
-        const indent="&nbsp;".repeat(depth*4);
+        const indent = "&nbsp;".repeat(depth * 4);
 
-        let attrs="";
+        let attrs = "";
 
-        for(const a of el.attributes){
+        for (const a of el.attributes) {
 
-            if(a.name.startsWith("ui-picker")) continue;
+            if (a.name.startsWith("ui-picker")) continue;
 
             attrs += ` <span class="tree-attr">${a.name}</span>=<span class="tree-attr">"${a.value}"</span>`;
         }
 
         const selected = el === selectedEl ? " tree-selected" : "";
 
-        let html=`
+        let html = `
 <div class="tree-node${selected}">
 ${indent}<span class="tree-tag">&lt;${el.tagName.toLowerCase()}</span>${attrs}<span class="tree-tag">&gt;</span>
 </div>
 `;
 
-        const children=[...el.children];
+        const children = [...el.children];
 
-        children.slice(0,8).forEach(child=>{
+        children.slice(0, 8).forEach(child => {
             html += buildTree(child, selectedEl, depth + 1);
         });
 
@@ -402,7 +422,11 @@ ${indent}<span class="tree-tag">&lt;/${el.tagName.toLowerCase()}&gt;</span>
         return html;
     }
 
-    function makeDraggable(panel){
+    /* =========================
+       DRAG PANEL
+    ========================= */
+
+    function makeDraggable(panel) {
 
         const header = panel.querySelector(".picker-header");
 
@@ -413,7 +437,6 @@ ${indent}<span class="tree-tag">&lt;/${el.tagName.toLowerCase()}&gt;</span>
         header.addEventListener("mousedown", e => {
 
             dragging = true;
-
             header.style.cursor = "grabbing";
 
             offsetX = e.clientX - panel.offsetLeft;
@@ -421,20 +444,18 @@ ${indent}<span class="tree-tag">&lt;/${el.tagName.toLowerCase()}&gt;</span>
 
             document.addEventListener("mousemove", movePanel);
             document.addEventListener("mouseup", stopDrag);
-
         });
 
-        function movePanel(e){
+        function movePanel(e) {
 
-            if(!dragging) return;
+            if (!dragging) return;
 
             panel.style.left = (e.clientX - offsetX) + "px";
             panel.style.top = (e.clientY - offsetY) + "px";
-
             panel.style.right = "auto";
         }
 
-        function stopDrag(){
+        function stopDrag() {
 
             dragging = false;
 
@@ -446,28 +467,30 @@ ${indent}<span class="tree-tag">&lt;/${el.tagName.toLowerCase()}&gt;</span>
     }
 
     /* =========================
-    HELPERS
+       HELPERS
     ========================= */
 
-    function attrs(el){
-        return [...el.attributes].map(a=>`${a.name}="${a.value}"`).join("\n");
+    function attrs(el) {
+        return [...el.attributes]
+            .map(a => `${a.name}="${a.value}"`)
+            .join("\n");
     }
 
-    function domPath(el){
+    function domPath(el) {
 
-        const arr=[];
+        const arr = [];
 
-        while(el && el.nodeType===1){
+        while (el && el.nodeType === 1) {
             arr.unshift(el.tagName.toLowerCase());
-            el=el.parentElement;
+            el = el.parentElement;
         }
 
         return arr.join(" > ");
     }
 
-    function field(label,val){
+    function field(label, val) {
 
-        return`
+        return `
 <div class="section">
 <div class="label">${label}</div>
 <textarea class="field">${val}</textarea>
@@ -476,23 +499,22 @@ ${indent}<span class="tree-tag">&lt;/${el.tagName.toLowerCase()}&gt;</span>
     }
 
     /* =========================
-    PANEL
+       PANEL
     ========================= */
 
-    function openPanel(el){
+    function openPanel(el) {
 
-        const css=uniqueCss(el);
-        const xpath=uniqueXPath(el);
+        const css = uniqueCss(el);
+        const xpath = uniqueXPath(el);
 
-        const id=el.id||"";
-        const name=el.getAttribute("name")||"";
-        const className=el.classList?.[0]||"";
+        const id = el.id || "";
+        const name = el.getAttribute("name") || "";
+        const className = el.classList?.[0] || "";
 
-        const panel=document.createElement("div");
-        panel.id="ui-picker-panel";
+        const panel = document.createElement("div");
+        panel.id = "ui-picker-panel";
 
-        panel.innerHTML=`
-
+        panel.innerHTML = `
 <div class="picker-header">Element: ${el.tagName.toLowerCase()}</div>
 
 <div class="picker-tabs">
@@ -503,8 +525,8 @@ ${indent}<span class="tree-tag">&lt;/${el.tagName.toLowerCase()}&gt;</span>
 </div>
 
 <div class="picker-content" id="loc">
-${field("CSS Selector",css)}
-${field("XPath",xpath)}
+${field("CSS Selector", css)}
+${field("XPath", xpath)}
 </div>
 
 <div class="picker-content" id="dom" style="display:none">
@@ -512,8 +534,8 @@ ${field("XPath",xpath)}
 </div>
 
 <div class="picker-content" id="attr" style="display:none">
-${field("Attributes",attrs(el))}
-${field("DOM Path",domPath(el))}
+${field("Attributes", attrs(el))}
+${field("DOM Path", domPath(el))}
 </div>
 
 <div class="picker-content" id="code" style="display:none">
@@ -532,7 +554,6 @@ ${field("DOM Path",domPath(el))}
 <option value="wait">WebDriverWait</option>
 <option value="playwright">Playwright</option>
 </select>
-
 </div>
 
 <div class="section">
@@ -543,97 +564,91 @@ ${field("DOM Path",domPath(el))}
 </div>
 `;
 
-        const snippets={
+        const snippets = {
 
-            id:`driver.findElement(By.id("${id}"));`,
+            id: `driver.findElement(By.id("${id}"));`,
+            name: `driver.findElement(By.name("${name}"));`,
+            class: `driver.findElement(By.className("${className}"));`,
+            css: `driver.findElement(By.cssSelector("${css}"));`,
+            xpath: `driver.findElement(By.xpath("${xpath}"));`,
 
-            name:`driver.findElement(By.name("${name}"));`,
+            click: `driver.findElement(By.cssSelector("${css}")).click();`,
+            sendkeys: `driver.findElement(By.cssSelector("${css}")).sendKeys("text");`,
 
-            class:`driver.findElement(By.className("${className}"));`,
-
-            css:`driver.findElement(By.cssSelector("${css}"));`,
-
-            xpath:`driver.findElement(By.xpath("${xpath}"));`,
-
-            click:`driver.findElement(By.cssSelector("${css}")).click();`,
-
-            sendkeys:`driver.findElement(By.cssSelector("${css}")).sendKeys("text");`,
-
-            wait:`new WebDriverWait(driver, Duration.ofSeconds(10))
+            wait: `new WebDriverWait(driver, Duration.ofSeconds(10))
 .until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("${css}")));`,
 
-            playwright:`const el = page.locator("${css}");`
-
+            playwright: `const el = page.locator("${css}");`
         };
 
-        const select=panel.querySelector("#code-type");
-        const textarea=panel.querySelector("#code-snippet");
+        const select = panel.querySelector("#code-type");
+        const textarea = panel.querySelector("#code-snippet");
 
-        function updateSnippet(){
-            textarea.value=snippets[select.value]||"";
+        function updateSnippet() {
+            textarea.value = snippets[select.value] || "";
         }
 
-        select.onchange=updateSnippet;
+        select.onchange = updateSnippet;
         updateSnippet();
 
-        panel.querySelectorAll(".picker-tab").forEach(tab=>{
+        panel.querySelectorAll(".picker-tab").forEach(tab => {
 
-            tab.onclick=()=>{
+            tab.onclick = () => {
 
                 panel.querySelectorAll(".picker-tab")
-                    .forEach(t=>t.classList.remove("active"));
+                    .forEach(t => t.classList.remove("active"));
 
                 tab.classList.add("active");
 
                 panel.querySelectorAll(".picker-content")
-                    .forEach(c=>c.style.display="none");
+                    .forEach(c => c.style.display = "none");
 
-                panel.querySelector("#"+tab.dataset.tab)
-                    .style.display="block";
+                panel.querySelector("#" + tab.dataset.tab)
+                    .style.display = "block";
             };
-
         });
 
         document.getElementById("ui-picker-panel")?.remove();
         document.body.appendChild(panel);
-        setTimeout(()=>{
+
+        setTimeout(() => {
 
             const selectedNode = panel.querySelector(".tree-selected");
 
-            if(selectedNode){
+            if (selectedNode) {
                 selectedNode.scrollIntoView({
-                    behavior:"smooth",
-                    block:"center"
+                    behavior: "smooth",
+                    block: "center"
                 });
             }
 
-        },50);
+        }, 50);
+
         makeDraggable(panel);
     }
 
     /* =========================
-    EVENTS
+       EVENTS
     ========================= */
 
-    document.addEventListener("mouseover",e=>{
+    document.addEventListener("mouseover", e => {
 
-        if(!pickerEnabled) return;
+        if (!pickerEnabled) return;
 
-        if(
-            e.target.closest("#ui-picker-panel")||
+        if (
+            e.target.closest("#ui-picker-panel") ||
             e.target.closest("#ui-picker-toggle")
         ) return;
 
         showHighlight(e.target);
-
     });
 
-    document.addEventListener("mousedown",e=>{
+    document.addEventListener("mousedown", e => {
 
-        if(!pickerEnabled) return;
+        if (!pickerEnabled) return;
 
-        if(
-            e.target.closest("#ui-picker-panel")||
+        if (
+            e.target.closest("#ui-picker-panel") ||
             e.target.closest("#ui-picker-toggle")
         ) return;
 
@@ -642,6 +657,6 @@ ${field("DOM Path",domPath(el))}
 
         openPanel(e.target);
 
-    },true);
+    }, true);
 
 })();
