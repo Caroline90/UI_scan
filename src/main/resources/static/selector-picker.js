@@ -67,8 +67,10 @@
     width:520px;
     height:520px;
 
-    resize:both;
-    overflow:auto;
+    resize: both;
+    overflow: auto;
+    min-width: 350px;
+    min-height: 320px;
 
     background:var(--panel);
     border:1px solid var(--border);
@@ -80,6 +82,8 @@
     z-index:2147483647;
 
     box-shadow:0 10px 30px rgba(0,0,0,.6);
+    cursor:grab;
+    
 }
 
 /* =========================
@@ -426,40 +430,57 @@ ${indent}<span class="tree-tag">&lt;/${el.tagName.toLowerCase()}&gt;</span>
        DRAG PANEL
     ========================= */
 
-    function makeDraggable(panel) {
-
-        const header = panel.querySelector(".picker-header");
+    function makeDraggable(panel){
 
         let dragging = false;
         let offsetX = 0;
         let offsetY = 0;
 
-        header.addEventListener("mousedown", e => {
+        panel.addEventListener("mousedown", (e) => {
+
+            /* prevent dragging while interacting with inputs */
+            if (
+                e.target.closest("textarea") ||
+                e.target.closest("select") ||
+                e.target.closest("button")
+            ) return;
+
+            /* prevent dragging when resizing */
+            const rect = panel.getBoundingClientRect();
+
+            const resizeMargin = 12;
+
+            const onRightEdge = e.clientX > rect.right - resizeMargin;
+            const onBottomEdge = e.clientY > rect.bottom - resizeMargin;
+
+            if (onRightEdge || onBottomEdge) return;
 
             dragging = true;
-            header.style.cursor = "grabbing";
 
             offsetX = e.clientX - panel.offsetLeft;
             offsetY = e.clientY - panel.offsetTop;
+
+            panel.style.cursor = "grabbing";
 
             document.addEventListener("mousemove", movePanel);
             document.addEventListener("mouseup", stopDrag);
         });
 
-        function movePanel(e) {
+        function movePanel(e){
 
-            if (!dragging) return;
+            if(!dragging) return;
 
             panel.style.left = (e.clientX - offsetX) + "px";
             panel.style.top = (e.clientY - offsetY) + "px";
+
             panel.style.right = "auto";
         }
 
-        function stopDrag() {
+        function stopDrag(){
 
             dragging = false;
 
-            header.style.cursor = "grab";
+            panel.style.cursor = "grab";
 
             document.removeEventListener("mousemove", movePanel);
             document.removeEventListener("mouseup", stopDrag);
