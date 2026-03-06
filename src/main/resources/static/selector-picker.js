@@ -168,22 +168,66 @@ cursor:pointer;
 .tree{
 font-family:Consolas,monospace;
 font-size:13px;
-line-height:1.5;
+line-height:1.6;
+
+background:#1b1b1b;
+padding:10px;
+border-radius:6px;
+
+overflow:auto;
 }
 
 .tree-node{
-margin-left:12px;
-padding:2px 0;
+white-space:nowrap;
 }
 
 .tree-tag{
-color:var(--blue);
+color:#569CD6;
 font-weight:600;
 }
 
 .tree-attr{
-color:var(--orange);
+color:#CE9178;
 }
+
+.tree-toggle{
+color:#ccc;
+cursor:pointer;
+margin-right:4px;
+}
+
+.tree-toggle-empty{
+display:inline-block;
+width:12px;
+}
+
+.tree-children{
+margin-left:12px;
+}
+
+.tree-node:hover{
+background:#2d2d2d;
+}
+
+.tree-selected{
+background:#264f78;
+border-left:4px solid #4f9cff;
+padding-left:6px;
+border-radius:4px;
+
+font-weight:600;
+}
+
+.tree-selected .tree-tag{
+color:#ffffff;
+}
+
+.tree-selected::before{
+content:"▶";
+color:#4f9cff;
+margin-right:6px;
+}
+
 
 /* highlight box */
 
@@ -322,37 +366,38 @@ z-index:2147483646;
     DOM TREE
     ========================= */
 
-    function buildTree(el){
+    function buildTree(el, selectedEl, depth = 0){
 
-        const nodes=[];
-        let current=el;
+        const indent="&nbsp;".repeat(depth*4);
 
-        while(current && current.nodeType===1){
-            nodes.unshift(current);
-            current=current.parentElement;
+        let attrs="";
+
+        for(const a of el.attributes){
+
+            if(a.name.startsWith("ui-picker")) continue;
+
+            attrs += ` <span class="tree-attr">${a.name}</span>=<span class="tree-attr">"${a.value}"</span>`;
         }
 
-        let html="";
+        const selected = el === selectedEl ? " tree-selected" : "";
 
-        nodes.forEach((node,depth)=>{
-
-            const indent="&nbsp;".repeat(depth*4);
-
-            let attrs="";
-
-            for(const a of node.attributes){
-                attrs+=` <span class="tree-attr">${a.name}</span>=<span class="tree-attr">"${a.value}"</span>`;
-            }
-
-            const selected=node===el?` style="background:#333"`:"";
-
-            html+=`
-<div class="tree-node"${selected}>
-${indent}<span class="tree-tag">&lt;${node.tagName.toLowerCase()}</span>${attrs}<span class="tree-tag">&gt;</span>
+        let html=`
+<div class="tree-node${selected}">
+${indent}<span class="tree-tag">&lt;${el.tagName.toLowerCase()}</span>${attrs}<span class="tree-tag">&gt;</span>
 </div>
 `;
 
+        const children=[...el.children];
+
+        children.slice(0,8).forEach(child=>{
+            html += buildTree(child, selectedEl, depth + 1);
         });
+
+        html += `
+<div class="tree-node">
+${indent}<span class="tree-tag">&lt;/${el.tagName.toLowerCase()}&gt;</span>
+</div>
+`;
 
         return html;
     }
@@ -463,7 +508,7 @@ ${field("XPath",xpath)}
 </div>
 
 <div class="picker-content" id="dom" style="display:none">
-<div class="tree">${buildTree(el)}</div>
+<div class="tree">${buildTree(document.documentElement, el)}</div>
 </div>
 
 <div class="picker-content" id="attr" style="display:none">
@@ -551,6 +596,18 @@ ${field("DOM Path",domPath(el))}
 
         document.getElementById("ui-picker-panel")?.remove();
         document.body.appendChild(panel);
+        setTimeout(()=>{
+
+            const selectedNode = panel.querySelector(".tree-selected");
+
+            if(selectedNode){
+                selectedNode.scrollIntoView({
+                    behavior:"smooth",
+                    block:"center"
+                });
+            }
+
+        },50);
         makeDraggable(panel);
     }
 
