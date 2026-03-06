@@ -1,0 +1,8 @@
+server:
+  port: 8081
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    custom-js:
+      - /ui-picker/selector-picker.js
