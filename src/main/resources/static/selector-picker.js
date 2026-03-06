@@ -149,12 +149,12 @@ flex-shrink:0;
 ========================= */
 
 .picker-content{
-padding:14px;
+    padding:14px;
 
-flex:1;
-overflow:auto;
+    flex:1;
+    overflow:hidden;
+    min-height:0;
 }
-
 /* =========================
    SECTIONS
 ========================= */
@@ -213,7 +213,12 @@ select.field{
 
     border-radius:6px;
 
-    overflow:auto;
+    height:100%;
+    overflow:scroll;
+
+    white-space:nowrap;
+
+    scrollbar-gutter:stable both-edges;
 }
 
 .tree-node{
@@ -231,6 +236,20 @@ select.field{
 
 .tree-node:hover{
     background:#2d2d2d;
+}
+
+.tree::-webkit-scrollbar{
+    height:10px;
+    width:10px;
+}
+
+.tree::-webkit-scrollbar-thumb{
+    background:#555;
+    border-radius:6px;
+}
+
+.tree::-webkit-scrollbar-thumb:hover{
+    background:#777;
 }
 
 /* selected DOM element */
