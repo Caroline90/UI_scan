@@ -59,31 +59,30 @@
    PANEL
 ========================= */
 
-#ui-picker-panel{
+    #ui-picker-panel{
     position:fixed;
     top:30px;
     right:30px;
-
+    
     width:520px;
     height:520px;
-
-    resize: both;
-    overflow: auto;
-    min-width: 350px;
-    min-height: 320px;
-
+    
+    resize:both;
+    overflow:hidden;   /* important */
+    
+    display:flex;
+    flex-direction:column;
+    
     background:var(--panel);
     border:1px solid var(--border);
     border-radius:10px;
-
+    
     color:var(--text);
     font-family:system-ui;
-
-    z-index:2147483647;
-
-    box-shadow:0 10px 30px rgba(0,0,0,.6);
-    cursor:grab;
     
+    z-index:2147483647;
+    
+    box-shadow:0 10px 30px rgba(0,0,0,.6);
 }
 
 /* =========================
@@ -113,8 +112,14 @@
 ========================= */
 
 .picker-tabs{
-    display:flex;
-    border-bottom:1px solid var(--border);
+display:flex;
+border-bottom:1px solid var(--border);
+position:sticky;
+flex-shrink:0;
+}
+
+.picker-header{
+flex-shrink:0;
 }
 
 .picker-tab{
@@ -144,7 +149,10 @@
 ========================= */
 
 .picker-content{
-    padding:14px;
+padding:14px;
+
+flex:1;
+overflow:auto;
 }
 
 /* =========================
