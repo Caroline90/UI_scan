@@ -558,6 +558,14 @@ ${indent}<span class="tree-tag">&lt;/${el.tagName.toLowerCase()}&gt;</span>
         const id = el.id || "";
         const name = el.getAttribute("name") || "";
         const className = el.classList?.[0] || "";
+        const fieldName = (name || id || el.tagName.toLowerCase() + "Element")
+            .replace(/[^a-zA-Z0-9_]/g, " ")
+            .trim()
+            .split(/\s+/)
+            .map((part, index) => index === 0
+                ? (part.charAt(0).toLowerCase() + part.slice(1))
+                : (part.charAt(0).toUpperCase() + part.slice(1)))
+            .join("") || "element";
 
         const panel = document.createElement("div");
         panel.id = "ui-picker-panel";
@@ -601,6 +609,11 @@ ${field("DOM Path", domPath(el))}
 <option value="sendkeys">SendKeys</option>
 <option value="wait">WebDriverWait</option>
 <option value="playwright">Playwright</option>
+<option value="findby-id">@FindBy(id)</option>
+<option value="findby-name">@FindBy(name)</option>
+<option value="findby-class">@FindBy(className)</option>
+<option value="findby-css">@FindBy(css)</option>
+<option value="findby-xpath">@FindBy(xpath)</option>
 </select>
 </div>
 
@@ -626,7 +639,13 @@ ${field("DOM Path", domPath(el))}
             wait: `new WebDriverWait(driver, Duration.ofSeconds(10))
 .until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("${css}")));`,
 
-            playwright: `const el = page.locator("${css}");`
+            playwright: `const el = page.locator("${css}");`,
+
+            "findby-id": `@FindBy(id = "${id}")\nprivate WebElement ${fieldName};`,
+            "findby-name": `@FindBy(name = "${name}")\nprivate WebElement ${fieldName};`,
+            "findby-class": `@FindBy(className = "${className}")\nprivate WebElement ${fieldName};`,
+            "findby-css": `@FindBy(css = "${css}")\nprivate WebElement ${fieldName};`,
+            "findby-xpath": `@FindBy(xpath = "${xpath}")\nprivate WebElement ${fieldName};`
         };
 
         const select = panel.querySelector("#code-type");
