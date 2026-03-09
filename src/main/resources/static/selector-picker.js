@@ -558,6 +558,8 @@ ${indent}<span class="tree-tag">&lt;/${el.tagName.toLowerCase()}&gt;</span>
         const id = el.id || "";
         const name = el.getAttribute("name") || "";
         const className = el.classList?.[0] || "";
+        const fieldBaseName = name || id || el.tagName.toLowerCase();
+        const javaFieldName = `${fieldBaseName.replace(/[-_\s]+(.)?/g, (_, c) => c ? c.toUpperCase() : "").replace(/^[A-Z]/, c => c.toLowerCase())}Field`;
 
         const panel = document.createElement("div");
         panel.id = "ui-picker-panel";
@@ -600,6 +602,7 @@ ${field("DOM Path", domPath(el))}
 <option value="click">Click</option>
 <option value="sendkeys">SendKeys</option>
 <option value="wait">WebDriverWait</option>
+<option value="findbyname">@FindBy (PageFactory)</option>
 <option value="playwright">Playwright</option>
 </select>
 </div>
@@ -625,6 +628,9 @@ ${field("DOM Path", domPath(el))}
 
             wait: `new WebDriverWait(driver, Duration.ofSeconds(10))
 .until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("${css}")));`,
+
+            findbyname: `@FindBy(name = "${name}")
+private WebElement ${javaFieldName};`,
 
             playwright: `const el = page.locator("${css}");`
         };
