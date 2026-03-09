@@ -694,7 +694,14 @@ select.field{
             el = el.parentElement;
         }
 
-        return arr.join(" > ");
+        return arr
+            .map((tag, index) => {
+                if (index === 0) return tag;
+
+                const indent = "  ".repeat(index - 1);
+                return `${indent}└─ ${tag}`;
+            })
+            .join("\n");
     }
 
     function field(label, val) {
