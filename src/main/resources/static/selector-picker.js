@@ -685,16 +685,26 @@ select.field{
             .join("\n");
     }
 
-    function domPath(el) {
+    function semanticContext(el) {
 
-        const arr = [];
+        const lines = [];
+        const role = el.getAttribute("role") || "";
+        const ariaLabel = el.getAttribute("aria-label") || "";
+        const type = el.getAttribute("type") || "";
+        const placeholder = el.getAttribute("placeholder") || "";
+        const text = (el.innerText || el.textContent || "").trim().replace(/\s+/g, " ").slice(0, 120);
 
-        while (el && el.nodeType === 1) {
-            arr.unshift(el.tagName.toLowerCase());
-            el = el.parentElement;
-        }
+        if (role) lines.push(`role: ${role}`);
+        if (ariaLabel) lines.push(`aria-label: ${ariaLabel}`);
+        if (type) lines.push(`type: ${type}`);
+        if (placeholder) lines.push(`placeholder: ${placeholder}`);
+        if (text) lines.push(`visible text: ${text}`);
 
-        return arr.join(" > ");
+        const rect = el.getBoundingClientRect();
+        lines.push(`position: x=${Math.round(rect.x)}, y=${Math.round(rect.y)}`);
+        lines.push(`size: ${Math.round(rect.width)}x${Math.round(rect.height)}`);
+
+        return lines.join("\n") || "No semantic context available";
     }
 
     function field(label, val) {
@@ -752,7 +762,7 @@ ${field("XPath (absolute)", xpathAbsolute)}
 
 <div class="picker-content" id="attr" style="display:none">
 ${field("Attributes", attrs(el))}
-${field("DOM Path", domPath(el))}
+${field("Semantic Context", semanticContext(el))}
 </div>
 
 <div class="picker-content" id="code" style="display:none">
