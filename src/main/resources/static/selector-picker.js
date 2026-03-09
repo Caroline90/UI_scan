@@ -386,11 +386,34 @@ select.field{
        XPATH
     ========================= */
 
-    function uniqueXPath(el) {
+    function escapeXPathString(value) {
 
-        if (el.id) return `//*[@id="${el.id}"]`;
+        if (!value.includes('"')) return `"${value}"`;
 
-        let path = [];
+        if (!value.includes("'")) return `'${value}'`;
+
+        const parts = value.split('"').map(part => `"${part}"`);
+        return `concat(${parts.join(', "\\"", ')})`;
+    }
+
+    function countXPathMatches(xpath) {
+
+        return document.evaluate(
+            `count(${xpath})`,
+            document,
+            null,
+            XPathResult.NUMBER_TYPE,
+            null
+        ).numberValue;
+    }
+
+    function isUniqueXPath(xpath) {
+        return countXPathMatches(xpath) === 1;
+    }
+
+    function absoluteXPath(el) {
+
+        const path = [];
 
         while (el && el.nodeType === 1) {
 
@@ -399,18 +422,80 @@ select.field{
 
             while (sib) {
 
-                if (sib.nodeType === 1 && sib.nodeName === el.nodeName)
-                    i++;
-
+                if (sib.nodeType === 1 && sib.nodeName === el.nodeName) i++;
                 sib = sib.previousSibling;
             }
 
             path.unshift(`${el.nodeName.toLowerCase()}[${i}]`);
-
             el = el.parentNode;
         }
 
         return "/" + path.join("/");
+    }
+
+    function uniqueXPath(el) {
+
+        const attrPriority = [
+            "id",
+            "name",
+            "data-testid",
+            "data-test",
+            "data-qa",
+            "aria-label",
+            "title",
+            "placeholder",
+            "type",
+            "value"
+        ];
+
+        for (const attr of attrPriority) {
+
+            const value = el.getAttribute?.(attr);
+
+            if (!value) continue;
+
+            const candidate = `//*[@${attr}=${escapeXPathString(value)}]`;
+
+            if (isUniqueXPath(candidate)) return candidate;
+
+            const tagCandidate = `//${el.tagName.toLowerCase()}[@${attr}=${escapeXPathString(value)}]`;
+
+            if (isUniqueXPath(tagCandidate)) return tagCandidate;
+        }
+
+        const text = el.textContent?.trim().replace(/\s+/g, " ");
+
+        if (text && text.length <= 50) {
+
+            const textCandidate = `//${el.tagName.toLowerCase()}[normalize-space()=${escapeXPathString(text)}]`;
+
+            if (isUniqueXPath(textCandidate)) return textCandidate;
+        }
+
+        const classes = [...el.classList].filter(Boolean);
+
+        if (classes.length) {
+
+            const classCandidate = `//${el.tagName.toLowerCase()}[contains(concat(' ', normalize-space(@class), ' '), ' ${classes[0]} ')]`;
+
+            if (isUniqueXPath(classCandidate)) return classCandidate;
+        }
+
+        const fullPath = absoluteXPath(el);
+
+        if (isUniqueXPath(fullPath)) {
+
+            const segments = fullPath.slice(1).split("/");
+
+            for (let i = 0; i < segments.length; i++) {
+
+                const shorterCandidate = `//${segments.slice(i).join("/")}`;
+
+                if (isUniqueXPath(shorterCandidate)) return shorterCandidate;
+            }
+        }
+
+        return fullPath;
     }
 
     /* =========================
@@ -554,6 +639,7 @@ ${indent}<span class="tree-tag">&lt;/${el.tagName.toLowerCase()}&gt;</span>
 
         const css = uniqueCss(el);
         const xpath = uniqueXPath(el);
+        const xpathAbsolute = absoluteXPath(el);
 
         const id = el.id || "";
         const name = el.getAttribute("name") || "";
@@ -574,7 +660,8 @@ ${indent}<span class="tree-tag">&lt;/${el.tagName.toLowerCase()}&gt;</span>
 
 <div class="picker-content" id="loc">
 ${field("CSS Selector", css)}
-${field("XPath", xpath)}
+${field("XPath (recommended)", xpath)}
+${field("XPath (absolute)", xpathAbsolute)}
 </div>
 
 <div class="picker-content" id="dom" style="display:none">
