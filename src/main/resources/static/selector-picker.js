@@ -221,6 +221,21 @@ select.field{
     scrollbar-gutter:stable both-edges;
 }
 
+.tree-toggle{
+    cursor:pointer;
+    color:var(--text);
+    user-select:none;
+}
+
+.tree-children{
+    margin-left:16px;
+    display:none;
+}
+
+.tree-children.expanded{
+    display:block;
+}
+
 .tree-node{
     white-space:nowrap;
 }
@@ -382,6 +397,17 @@ select.field{
         return path.join(" > ");
     }
 
+    function isUniqueCss(selector) {
+
+        if (!selector) return false;
+
+        try {
+            return document.querySelectorAll(selector).length === 1;
+        } catch {
+            return false;
+        }
+    }
+
     /* =========================
        XPATH
     ========================= */
@@ -504,8 +530,6 @@ select.field{
 
     function buildTree(el, selectedEl, depth = 0) {
 
-        const indent = "&nbsp;".repeat(depth * 4);
-
         let attrs = "";
 
         for (const a of el.attributes) {
@@ -516,26 +540,78 @@ select.field{
         }
 
         const selected = el === selectedEl ? " tree-selected" : "";
+        const children = [...el.children];
+        const hasChildren = children.length > 0;
+        const expanded = depth < 2 || el.contains(selectedEl) ? "expanded" : "";
+        const marker = hasChildren ? (expanded ? "▼" : "▶") : "•";
 
         let html = `
-<div class="tree-node${selected}">
-${indent}<span class="tree-tag">&lt;${el.tagName.toLowerCase()}</span>${attrs}<span class="tree-tag">&gt;</span>
+<div class="tree-node${selected}" data-node-id="${depth}-${el.tagName}-${children.length}-${selected}">
+<span class="tree-toggle" data-toggle="${hasChildren ? "1" : "0"}">${marker}</span>
+<span class="tree-tag">&lt;${el.tagName.toLowerCase()}</span>${attrs}<span class="tree-tag">&gt;</span>
 </div>
 `;
 
-        const children = [...el.children];
+        if (hasChildren) {
 
-        children.slice(0, 8).forEach(child => {
-            html += buildTree(child, selectedEl, depth + 1);
-        });
+            html += `<div class="tree-children ${expanded}">`;
 
-        html += `
-<div class="tree-node">
-${indent}<span class="tree-tag">&lt;/${el.tagName.toLowerCase()}&gt;</span>
-</div>
-`;
+            children.forEach(child => {
+                html += buildTree(child, selectedEl, depth + 1);
+            });
+
+            html += `</div>`;
+        }
 
         return html;
+    }
+
+    function getLocatorCandidates(el) {
+
+        const dataTestId = el.getAttribute("data-testid") || "";
+        const id = el.id || "";
+        const name = el.getAttribute("name") || "";
+        const css = uniqueCss(el);
+        const xpath = uniqueXPath(el);
+
+        return [
+            {
+                key: "data-testid",
+                label: "Data Test ID",
+                value: dataTestId ? `[data-testid=\"${dataTestId}\"]` : "",
+                unique: dataTestId ? isUniqueCss(`[data-testid=\"${dataTestId}\"]`) : false
+            },
+            {
+                key: "id",
+                label: "ID",
+                value: id ? `#${CSS.escape(id)}` : "",
+                unique: id ? isUniqueCss(`#${CSS.escape(id)}`) : false
+            },
+            {
+                key: "name",
+                label: "Name",
+                value: name ? `[name=\"${name}\"]` : "",
+                unique: name ? isUniqueCss(`[name=\"${name}\"]`) : false
+            },
+            {
+                key: "css",
+                label: "CSS Selector",
+                value: css,
+                unique: isUniqueCss(css)
+            },
+            {
+                key: "xpath",
+                label: "XPath",
+                value: xpath,
+                unique: isUniqueXPath(xpath)
+            }
+        ];
+    }
+
+    function recommendedLocator(el) {
+
+        const ranked = getLocatorCandidates(el);
+        return ranked.find(candidate => candidate.value && candidate.unique) || ranked[ranked.length - 1];
     }
 
     /* =========================
@@ -640,6 +716,8 @@ ${indent}<span class="tree-tag">&lt;/${el.tagName.toLowerCase()}&gt;</span>
         const css = uniqueCss(el);
         const xpath = uniqueXPath(el);
         const xpathAbsolute = absoluteXPath(el);
+        const recommended = recommendedLocator(el);
+        const rankedLocators = getLocatorCandidates(el);
 
         const id = el.id || "";
         const name = el.getAttribute("name") || "";
@@ -659,6 +737,10 @@ ${indent}<span class="tree-tag">&lt;/${el.tagName.toLowerCase()}&gt;</span>
 </div>
 
 <div class="picker-content" id="loc">
+${field(`Recommended Locator (${recommended.key})`, recommended.value)}
+${field("Locator Uniqueness Check", rankedLocators
+            .map(l => `${l.label}: ${l.value || "N/A"} ${l.unique ? "✅ unique" : "⚠ not unique"}`)
+            .join("\n"))}
 ${field("CSS Selector", css)}
 ${field("XPath (recommended)", xpath)}
 ${field("XPath (absolute)", xpathAbsolute)}
@@ -693,6 +775,7 @@ ${field("DOM Path", domPath(el))}
 <option value="sendkeys">SendKeys</option>
 <option value="wait">WebDriverWait</option>
 <option value="playwright">Playwright</option>
+<option value="cypress">Cypress</option>
 </select>
 </div>
 
@@ -724,7 +807,8 @@ ${field("DOM Path", domPath(el))}
             wait: `new WebDriverWait(driver, Duration.ofSeconds(10))
 .until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("${css}")));`,
 
-            playwright: `const el = page.locator("${css}");`
+            playwright: `const el = page.locator("${css}");`,
+            cypress: `cy.get("${recommended.value || css}").should("be.visible");`
         };
 
         const select = panel.querySelector("#code-type");
@@ -771,6 +855,20 @@ ${field("DOM Path", domPath(el))}
         }, 50);
 
         makeDraggable(panel);
+
+        panel.querySelectorAll(".tree-toggle[data-toggle='1']").forEach(toggleBtn => {
+
+            toggleBtn.addEventListener("click", () => {
+
+                const node = toggleBtn.closest(".tree-node");
+                const children = node?.nextElementSibling;
+
+                if (!children || !children.classList.contains("tree-children")) return;
+
+                const isExpanded = children.classList.toggle("expanded");
+                toggleBtn.textContent = isExpanded ? "▼" : "▶";
+            });
+        });
     }
 
     /* =========================
