@@ -597,6 +597,11 @@ ${field("DOM Path", domPath(el))}
 <option value="css">By.cssSelector</option>
 <option value="class">By.className</option>
 <option value="xpath">By.xpath</option>
+<option value="findby-id">@FindBy(id)</option>
+<option value="findby-name">@FindBy(name)</option>
+<option value="findby-css">@FindBy(css)</option>
+<option value="findby-class">@FindBy(className)</option>
+<option value="findby-xpath">@FindBy(xpath)</option>
 <option value="click">Click</option>
 <option value="sendkeys">SendKeys</option>
 <option value="wait">WebDriverWait</option>
@@ -619,6 +624,12 @@ ${field("DOM Path", domPath(el))}
             class: `driver.findElement(By.className("${className}"));`,
             css: `driver.findElement(By.cssSelector("${css}"));`,
             xpath: `driver.findElement(By.xpath("${xpath}"));`,
+
+            "findby-id": `@FindBy(id = "${id}")\nprivate WebElement element;`,
+            "findby-name": `@FindBy(name = "${name}")\nprivate WebElement element;`,
+            "findby-css": `@FindBy(css = "${css}")\nprivate WebElement element;`,
+            "findby-class": `@FindBy(className = "${className}")\nprivate WebElement element;`,
+            "findby-xpath": `@FindBy(xpath = "${xpath}")\nprivate WebElement element;`,
 
             click: `driver.findElement(By.cssSelector("${css}")).click();`,
             sendkeys: `driver.findElement(By.cssSelector("${css}")).sendKeys("text");`,
