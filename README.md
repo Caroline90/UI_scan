@@ -6,8 +6,8 @@
 6. Go to favourties and enable the plugin
 
 V1.0
-Startup project
-Replace DOM Path output with semantic context in the picker panel
-Enhance selector picker with ranked locators, uniqueness checks, Cypress snippet, and expandable DOM tree
-Improve locator tab with smarter XPath suggestions
-Add @FindBy Selenium locator snippets to the code tab
+* Startup project
+* Replace DOM Path output with semantic context in the picker panel
+* Enhance selector picker with ranked locators, uniqueness checks, Cypress snippet, and expandable DOM tree
+* Improve locator tab with smarter XPath suggestions
+* Add @FindBy Selenium locator snippets to the code tab
