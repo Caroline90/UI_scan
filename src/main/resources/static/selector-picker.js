@@ -449,13 +449,17 @@ select.field{
 
     function countXPathMatches(xpath, doc = hostDocument) {
 
-        return document.evaluate(
-            `count(${xpath})`,
-            doc,
-            null,
-            XPathResult.NUMBER_TYPE,
-            null
-        ).numberValue;
+        try {
+            return doc.evaluate(
+                `count(${xpath})`,
+                doc,
+                null,
+                XPathResult.NUMBER_TYPE,
+                null
+            ).numberValue;
+        } catch {
+            return 0;
+        }
     }
 
     function isUniqueXPath(xpath, doc = hostDocument) {
@@ -593,6 +597,14 @@ select.field{
 
     function getLocatorCandidates(el, doc = el.ownerDocument) {
 
+        const cssAttributeSelector = (attr, value) => {
+
+            if (!value) return "";
+
+            const escaped = CSS.escape(value);
+            return `[${attr}="${escaped}"]`;
+        };
+
         const dataTestId = el.getAttribute("data-testid") || "";
         const id = el.id || "";
         const name = el.getAttribute("name") || "";
@@ -604,8 +616,8 @@ select.field{
             {
                 key: "data-testid",
                 label: "Data Test ID",
-                value: dataTestId ? `[data-testid=\"${dataTestId}\"]` : "",
-                unique: dataTestId ? isUniqueCss(`[data-testid=\"${dataTestId}\"]`, doc) : false
+                value: cssAttributeSelector("data-testid", dataTestId),
+                unique: dataTestId ? isUniqueCss(cssAttributeSelector("data-testid", dataTestId), doc) : false
             },
             {
                 key: "id",
@@ -616,14 +628,14 @@ select.field{
             {
                 key: "name",
                 label: "Name",
-                value: name ? `[name=\"${name}\"]` : "",
-                unique: name ? isUniqueCss(`[name=\"${name}\"]`, doc) : false
+                value: cssAttributeSelector("name", name),
+                unique: name ? isUniqueCss(cssAttributeSelector("name", name), doc) : false
             },
             {
                 key: "placeholder",
                 label: "Placeholder",
-                value: placeholder ? `[placeholder=\"${placeholder}\"]` : "",
-                unique: placeholder ? isUniqueCss(`[placeholder=\"${placeholder}\"]`, doc) : false
+                value: cssAttributeSelector("placeholder", placeholder),
+                unique: placeholder ? isUniqueCss(cssAttributeSelector("placeholder", placeholder), doc) : false
             },
             {
                 key: "css",
