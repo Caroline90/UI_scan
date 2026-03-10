@@ -1010,6 +1010,11 @@ ${field("Semantic Context", semanticContext(el))}
 
     const INTERACTIVE_SELECTOR = [
         "input",
+        "input[type='time']",
+        "input[type='date']",
+        "input[type='datetime-local']",
+        "input[type='week']",
+        "input[type='month']",
         "select",
         "textarea",
         "button",
@@ -1028,8 +1033,59 @@ ${field("Semantic Context", semanticContext(el))}
         "[role='switch']",
         "[role='spinbutton']",
         "[role='slider']",
+        "[role='tab']",
+        "[role='tabpanel']",
+        "[role='tooltip']",
+        "[role='dialog']",
+        "[role='alert']",
+        "[role='status']",
+        "[role='grid']",
+        "[role='treegrid']",
+        "[role='menu']",
+        "[role='menuitem']",
+        "[role='navigation']",
+        "[role='complementary']",
         "[aria-haspopup='listbox']"
     ].join(",");
+
+    const COMPONENT_KEYWORDS = [
+        "datetime", "date-time", "datepicker", "timepicker", "calendar",
+        "time", "day", "week", "month", "quarter", "year", "last-hour",
+        "radio", "checkbox", "check", "button", "pagination", "pager",
+        "grid", "table", "picklist", "slider", "sidebar", "tab", "tooltip",
+        "switch", "overlay", "toast", "dialog", "comment", "detailbar", "detail-bar"
+    ];
+
+    function hasComponentKeyword(el) {
+
+        if (!el || !(el instanceof Element)) return false;
+
+        const candidates = [
+            el.id,
+            el.className,
+            el.getAttribute("role"),
+            el.getAttribute("aria-label"),
+            el.getAttribute("aria-labelledby"),
+            el.getAttribute("data-testid"),
+            el.getAttribute("data-test"),
+            el.getAttribute("data-qa"),
+            el.getAttribute("name")
+        ].filter(Boolean).join(" ").toLowerCase();
+
+        return COMPONENT_KEYWORDS.some(keyword => candidates.includes(keyword));
+    }
+
+    function findComponentContainer(el) {
+
+        let current = el;
+
+        while (current && current !== current.ownerDocument.documentElement) {
+            if (hasComponentKeyword(current)) return current;
+            current = current.parentElement;
+        }
+
+        return null;
+    }
 
     function resolveTargetElement(target) {
 
@@ -1039,6 +1095,12 @@ ${field("Semantic Context", semanticContext(el))}
 
         if (interactiveAncestor && !shouldIgnoreTarget(interactiveAncestor)) {
             return interactiveAncestor;
+        }
+
+        const componentContainer = findComponentContainer(target);
+
+        if (componentContainer && !shouldIgnoreTarget(componentContainer)) {
+            return componentContainer;
         }
 
         if (target.tagName === "LABEL") {
