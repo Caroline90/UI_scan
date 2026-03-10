@@ -557,7 +557,16 @@ select.field{
        DOM TREE
     ========================= */
 
-    function buildTree(el, selectedEl, depth = 0) {
+    const MAX_TREE_NODES = 1500;
+
+    function buildTree(el, selectedEl, options = {}, depth = 0, state = {count: 0, truncated: false}) {
+
+        if (state.count >= (options.maxNodes || MAX_TREE_NODES)) {
+            state.truncated = true;
+            return "";
+        }
+
+        state.count++;
 
         let attrs = "";
 
@@ -586,7 +595,7 @@ select.field{
             html += `<div class="tree-children ${expanded}">`;
 
             children.forEach(child => {
-                html += buildTree(child, selectedEl, depth + 1);
+                html += buildTree(child, selectedEl, options, depth + 1, state);
             });
 
             html += `</div>`;
@@ -655,7 +664,9 @@ select.field{
     function recommendedLocator(el, doc = el.ownerDocument) {
 
         const ranked = getLocatorCandidates(el, doc);
-        return ranked.find(candidate => candidate.value && candidate.unique) || ranked[ranked.length - 1];
+        return ranked.find(candidate => candidate.value && candidate.unique)
+            || ranked.find(candidate => candidate.value)
+            || ranked[ranked.length - 1];
     }
 
     /* =========================
@@ -832,7 +843,7 @@ ${field("Frame Path", framePathText)}
 </div>
 
 <div class="picker-content" id="dom" style="display:none">
-<div class="tree">${buildTree(sourceDoc.documentElement, el)}</div>
+<div class="tree" id="dom-tree" data-loaded="0">Loading DOM tree…</div>
 </div>
 
 <div class="picker-content" id="attr" style="display:none">
@@ -906,6 +917,36 @@ ${field("Semantic Context", semanticContext(el))}
         select.onchange = updateSnippet;
         updateSnippet();
 
+        const domTree = panel.querySelector("#dom-tree");
+
+        function renderDomTreeIfNeeded() {
+
+            if (!domTree || domTree.dataset.loaded === "1") return;
+
+            const state = {count: 0, truncated: false};
+            const treeHtml = buildTree(sourceDoc.documentElement, el, {maxNodes: MAX_TREE_NODES}, 0, state);
+            const note = state.truncated
+                ? `<div class="tree-node">⚠ DOM tree truncated to ${MAX_TREE_NODES} nodes to keep picker responsive.</div>`
+                : "";
+
+            domTree.innerHTML = note + treeHtml;
+            domTree.dataset.loaded = "1";
+
+            domTree.querySelectorAll(".tree-toggle[data-toggle='1']").forEach(toggleBtn => {
+
+                toggleBtn.addEventListener("click", () => {
+
+                    const node = toggleBtn.closest(".tree-node");
+                    const children = node?.nextElementSibling;
+
+                    if (!children || !children.classList.contains("tree-children")) return;
+
+                    const isExpanded = children.classList.toggle("expanded");
+                    toggleBtn.textContent = isExpanded ? "▼" : "▶";
+                });
+            });
+        }
+
         panel.querySelectorAll(".picker-tab").forEach(tab => {
 
             tab.onclick = () => {
@@ -920,6 +961,8 @@ ${field("Semantic Context", semanticContext(el))}
 
                 panel.querySelector("#" + tab.dataset.tab)
                     .style.display = "block";
+
+                if (tab.dataset.tab === "dom") renderDomTreeIfNeeded();
             };
         });
 
@@ -927,6 +970,8 @@ ${field("Semantic Context", semanticContext(el))}
         hostDocument.body.appendChild(panel);
 
         setTimeout(() => {
+
+            renderDomTreeIfNeeded();
 
             const selectedNode = panel.querySelector(".tree-selected");
 
@@ -941,19 +986,9 @@ ${field("Semantic Context", semanticContext(el))}
 
         makeDraggable(panel);
 
-        panel.querySelectorAll(".tree-toggle[data-toggle='1']").forEach(toggleBtn => {
-
-            toggleBtn.addEventListener("click", () => {
-
-                const node = toggleBtn.closest(".tree-node");
-                const children = node?.nextElementSibling;
-
-                if (!children || !children.classList.contains("tree-children")) return;
-
-                const isExpanded = children.classList.toggle("expanded");
-                toggleBtn.textContent = isExpanded ? "▼" : "▶";
-            });
-        });
+        if (panel.querySelector(".picker-tab.active")?.dataset.tab === "dom") {
+            renderDomTreeIfNeeded();
+        }
     }
 
     /* =========================
