@@ -1008,6 +1008,63 @@ ${field("Semantic Context", semanticContext(el))}
         return target?.parentElement || null;
     }
 
+    const INTERACTIVE_SELECTOR = [
+        "input",
+        "select",
+        "textarea",
+        "button",
+        "label",
+        "a[href]",
+        "[contenteditable='']",
+        "[contenteditable='true']",
+        "[role='textbox']",
+        "[role='combobox']",
+        "[role='listbox']",
+        "[role='option']",
+        "[role='button']",
+        "[role='link']",
+        "[role='checkbox']",
+        "[role='radio']",
+        "[role='switch']",
+        "[role='spinbutton']",
+        "[role='slider']",
+        "[aria-haspopup='listbox']"
+    ].join(",");
+
+    function resolveTargetElement(target) {
+
+        if (!target) return null;
+
+        const interactiveAncestor = target.closest(INTERACTIVE_SELECTOR);
+
+        if (interactiveAncestor && !shouldIgnoreTarget(interactiveAncestor)) {
+            return interactiveAncestor;
+        }
+
+        if (target.tagName === "LABEL") {
+
+            const htmlFor = target.getAttribute("for");
+
+            if (htmlFor) {
+                const control = target.ownerDocument.getElementById(htmlFor);
+                if (control) return control;
+            }
+
+            if (target.control) return target.control;
+        }
+
+        if (target.matches("div,span,li,td,th")) {
+
+            const nestedInteractive = target.querySelector(INTERACTIVE_SELECTOR);
+
+            if (nestedInteractive && !shouldIgnoreTarget(nestedInteractive)) {
+                return nestedInteractive;
+            }
+        }
+
+        return target;
+    }
+
     function registerDocument(targetDocument) {
 
         if (!targetDocument || trackedDocuments.has(targetDocument)) return;
@@ -1020,9 +1077,13 @@ ${field("Semantic Context", semanticContext(el))}
 
             const target = toElement(e.target);
             if (!target) return;
-            if (shouldIgnoreTarget(target)) return;
 
-            showHighlight(target);
+            const resolvedTarget = resolveTargetElement(target);
+
+            if (!resolvedTarget) return;
+            if (shouldIgnoreTarget(resolvedTarget)) return;
+
+            showHighlight(resolvedTarget);
         };
 
         targetDocument.addEventListener("mouseover", onPointerMove);
@@ -1040,12 +1101,16 @@ ${field("Semantic Context", semanticContext(el))}
 
             const target = toElement(e.target);
             if (!target) return;
-            if (shouldIgnoreTarget(target)) return;
+
+            const resolvedTarget = resolveTargetElement(target);
+
+            if (!resolvedTarget) return;
+            if (shouldIgnoreTarget(resolvedTarget)) return;
 
             e.preventDefault();
             e.stopPropagation();
 
-            openPanel(target);
+            openPanel(resolvedTarget);
 
         }, true);
 
