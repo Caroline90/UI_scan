@@ -823,7 +823,7 @@ select.field{
 <div class="picker-content" id="loc">
 ${field(`Recommended Locator (${recommended.key})`, recommended.value)}
 ${field("Locator Uniqueness Check", rankedLocators
-            .map(l => `${l.label}: ${l.value || "N/A"} ${l.unique ? "✅ unique" : "⚠ not unique"}`)
+            .map(l => `${l.label}: ${l.value || "N/A"} ${l.unique ? "✅ unique" : "❌ not unique"}`)
             .join("\n"))}
 ${field("CSS Selector", css)}
 ${field("XPath (recommended)", xpath)}
