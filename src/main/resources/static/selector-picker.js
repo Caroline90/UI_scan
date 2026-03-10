@@ -596,6 +596,7 @@ select.field{
         const dataTestId = el.getAttribute("data-testid") || "";
         const id = el.id || "";
         const name = el.getAttribute("name") || "";
+        const placeholder = el.getAttribute("placeholder") || "";
         const css = uniqueCss(el, doc);
         const xpath = uniqueXPath(el, doc);
 
@@ -617,6 +618,12 @@ select.field{
                 label: "Name",
                 value: name ? `[name=\"${name}\"]` : "",
                 unique: name ? isUniqueCss(`[name=\"${name}\"]`, doc) : false
+            },
+            {
+                key: "placeholder",
+                label: "Placeholder",
+                value: placeholder ? `[placeholder=\"${placeholder}\"]` : "",
+                unique: placeholder ? isUniqueCss(`[placeholder=\"${placeholder}\"]`, doc) : false
             },
             {
                 key: "css",
