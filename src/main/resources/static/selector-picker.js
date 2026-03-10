@@ -354,9 +354,10 @@ select.field{
         box.style.position = "fixed";
         box.style.pointerEvents = "none";
         box.style.border = "3px solid #4f9cff";
+        box.style.background = "rgba(79,156,255,.1)";
         box.style.zIndex = "2147483646";
 
-        doc.body?.appendChild(box);
+        (doc.body || doc.documentElement)?.appendChild(box);
         highlightBoxes.set(doc, box);
 
         return box;
@@ -368,10 +369,21 @@ select.field{
         const box = getHighlightBox(doc);
         const r = el.getBoundingClientRect();
 
+        if (!r.width && !r.height) return;
+
         box.style.top = r.top + "px";
         box.style.left = r.left + "px";
         box.style.width = r.width + "px";
         box.style.height = r.height + "px";
+    }
+
+    function hideHighlight(doc) {
+
+        const box = highlightBoxes.get(doc);
+        if (!box) return;
+
+        box.style.width = "0px";
+        box.style.height = "0px";
     }
 
     /* =========================
@@ -936,29 +948,50 @@ ${field("Semantic Context", semanticContext(el))}
         );
     }
 
+    function toElement(target) {
+
+        if (target instanceof Element) return target;
+        return target?.parentElement || null;
+    }
+
     function registerDocument(targetDocument) {
 
         if (!targetDocument || trackedDocuments.has(targetDocument)) return;
 
         trackedDocuments.add(targetDocument);
 
-        targetDocument.addEventListener("mouseover", e => {
+        const onPointerMove = e => {
 
             if (!pickerEnabled) return;
-            if (shouldIgnoreTarget(e.target)) return;
 
-            showHighlight(e.target);
+            const target = toElement(e.target);
+            if (!target) return;
+            if (shouldIgnoreTarget(target)) return;
+
+            showHighlight(target);
+        };
+
+        targetDocument.addEventListener("mouseover", onPointerMove);
+        targetDocument.addEventListener("mousemove", onPointerMove);
+
+        targetDocument.addEventListener("mouseleave", () => {
+
+            if (!pickerEnabled) return;
+            hideHighlight(targetDocument);
         });
 
         targetDocument.addEventListener("mousedown", e => {
 
             if (!pickerEnabled) return;
-            if (shouldIgnoreTarget(e.target)) return;
+
+            const target = toElement(e.target);
+            if (!target) return;
+            if (shouldIgnoreTarget(target)) return;
 
             e.preventDefault();
             e.stopPropagation();
 
-            openPanel(e.target);
+            openPanel(target);
 
         }, true);
 
