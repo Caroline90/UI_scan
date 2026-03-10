@@ -8,7 +8,10 @@
     ========================= */
 
     let pickerEnabled = false;
-    let highlightBox = null;
+    const hostDocument = document;
+    const highlightBoxes = new WeakMap();
+    const trackedDocuments = new Set();
+
 
     /* =========================
        STYLES
@@ -326,10 +329,12 @@ select.field{
 
         if (!pickerEnabled) {
 
-            highlightBox?.remove();
-            highlightBox = null;
+            trackedDocuments.forEach(doc => {
+                const box = highlightBoxes.get(doc);
+                box?.remove();
+            });
 
-            document.getElementById("ui-picker-panel")?.remove();
+            hostDocument.getElementById("ui-picker-panel")?.remove();
         }
     };
 
@@ -339,33 +344,41 @@ select.field{
        HIGHLIGHT ELEMENT
     ========================= */
 
+    function getHighlightBox(doc) {
+
+        let box = highlightBoxes.get(doc);
+
+        if (box?.isConnected) return box;
+
+        box = doc.createElement("div");
+        box.style.position = "fixed";
+        box.style.pointerEvents = "none";
+        box.style.border = "3px solid #4f9cff";
+        box.style.zIndex = "2147483646";
+
+        doc.body?.appendChild(box);
+        highlightBoxes.set(doc, box);
+
+        return box;
+    }
+
     function showHighlight(el) {
 
-        if (!highlightBox) {
-
-            highlightBox = document.createElement("div");
-
-            highlightBox.style.position = "fixed";
-            highlightBox.style.pointerEvents = "none";
-            highlightBox.style.border = "3px solid #4f9cff";
-            highlightBox.style.zIndex = "2147483646";
-
-            document.body.appendChild(highlightBox);
-        }
-
+        const doc = el.ownerDocument;
+        const box = getHighlightBox(doc);
         const r = el.getBoundingClientRect();
 
-        highlightBox.style.top = r.top + "px";
-        highlightBox.style.left = r.left + "px";
-        highlightBox.style.width = r.width + "px";
-        highlightBox.style.height = r.height + "px";
+        box.style.top = r.top + "px";
+        box.style.left = r.left + "px";
+        box.style.width = r.width + "px";
+        box.style.height = r.height + "px";
     }
 
     /* =========================
        CSS LOCATOR
     ========================= */
 
-    function uniqueCss(el) {
+    function uniqueCss(el, doc = el.ownerDocument) {
 
         if (el.id) return "#" + CSS.escape(el.id);
 
@@ -388,7 +401,7 @@ select.field{
 
             const full = path.join(" > ");
 
-            if (document.querySelectorAll(full).length === 1)
+            if (doc.querySelectorAll(full).length === 1)
                 return full;
 
             el = el.parentElement;
@@ -397,12 +410,12 @@ select.field{
         return path.join(" > ");
     }
 
-    function isUniqueCss(selector) {
+    function isUniqueCss(selector, doc = hostDocument) {
 
         if (!selector) return false;
 
         try {
-            return document.querySelectorAll(selector).length === 1;
+            return doc.querySelectorAll(selector).length === 1;
         } catch {
             return false;
         }
@@ -422,19 +435,19 @@ select.field{
         return `concat(${parts.join(', "\\"", ')})`;
     }
 
-    function countXPathMatches(xpath) {
+    function countXPathMatches(xpath, doc = hostDocument) {
 
         return document.evaluate(
             `count(${xpath})`,
-            document,
+            doc,
             null,
             XPathResult.NUMBER_TYPE,
             null
         ).numberValue;
     }
 
-    function isUniqueXPath(xpath) {
-        return countXPathMatches(xpath) === 1;
+    function isUniqueXPath(xpath, doc = hostDocument) {
+        return countXPathMatches(xpath, doc) === 1;
     }
 
     function absoluteXPath(el) {
@@ -459,7 +472,7 @@ select.field{
         return "/" + path.join("/");
     }
 
-    function uniqueXPath(el) {
+    function uniqueXPath(el, doc = el.ownerDocument) {
 
         const attrPriority = [
             "id",
@@ -482,11 +495,11 @@ select.field{
 
             const candidate = `//*[@${attr}=${escapeXPathString(value)}]`;
 
-            if (isUniqueXPath(candidate)) return candidate;
+            if (isUniqueXPath(candidate, doc)) return candidate;
 
             const tagCandidate = `//${el.tagName.toLowerCase()}[@${attr}=${escapeXPathString(value)}]`;
 
-            if (isUniqueXPath(tagCandidate)) return tagCandidate;
+            if (isUniqueXPath(tagCandidate, doc)) return tagCandidate;
         }
 
         const text = el.textContent?.trim().replace(/\s+/g, " ");
@@ -495,7 +508,7 @@ select.field{
 
             const textCandidate = `//${el.tagName.toLowerCase()}[normalize-space()=${escapeXPathString(text)}]`;
 
-            if (isUniqueXPath(textCandidate)) return textCandidate;
+            if (isUniqueXPath(textCandidate, doc)) return textCandidate;
         }
 
         const classes = [...el.classList].filter(Boolean);
@@ -504,12 +517,12 @@ select.field{
 
             const classCandidate = `//${el.tagName.toLowerCase()}[contains(concat(' ', normalize-space(@class), ' '), ' ${classes[0]} ')]`;
 
-            if (isUniqueXPath(classCandidate)) return classCandidate;
+            if (isUniqueXPath(classCandidate, doc)) return classCandidate;
         }
 
         const fullPath = absoluteXPath(el);
 
-        if (isUniqueXPath(fullPath)) {
+        if (isUniqueXPath(fullPath, doc)) {
 
             const segments = fullPath.slice(1).split("/");
 
@@ -517,7 +530,7 @@ select.field{
 
                 const shorterCandidate = `//${segments.slice(i).join("/")}`;
 
-                if (isUniqueXPath(shorterCandidate)) return shorterCandidate;
+                if (isUniqueXPath(shorterCandidate, doc)) return shorterCandidate;
             }
         }
 
@@ -566,51 +579,51 @@ select.field{
         return html;
     }
 
-    function getLocatorCandidates(el) {
+    function getLocatorCandidates(el, doc = el.ownerDocument) {
 
         const dataTestId = el.getAttribute("data-testid") || "";
         const id = el.id || "";
         const name = el.getAttribute("name") || "";
-        const css = uniqueCss(el);
-        const xpath = uniqueXPath(el);
+        const css = uniqueCss(el, doc);
+        const xpath = uniqueXPath(el, doc);
 
         return [
             {
                 key: "data-testid",
                 label: "Data Test ID",
                 value: dataTestId ? `[data-testid=\"${dataTestId}\"]` : "",
-                unique: dataTestId ? isUniqueCss(`[data-testid=\"${dataTestId}\"]`) : false
+                unique: dataTestId ? isUniqueCss(`[data-testid=\"${dataTestId}\"]`, doc) : false
             },
             {
                 key: "id",
                 label: "ID",
                 value: id ? `#${CSS.escape(id)}` : "",
-                unique: id ? isUniqueCss(`#${CSS.escape(id)}`) : false
+                unique: id ? isUniqueCss(`#${CSS.escape(id)}`, doc) : false
             },
             {
                 key: "name",
                 label: "Name",
                 value: name ? `[name=\"${name}\"]` : "",
-                unique: name ? isUniqueCss(`[name=\"${name}\"]`) : false
+                unique: name ? isUniqueCss(`[name=\"${name}\"]`, doc) : false
             },
             {
                 key: "css",
                 label: "CSS Selector",
                 value: css,
-                unique: isUniqueCss(css)
+                unique: isUniqueCss(css, doc)
             },
             {
                 key: "xpath",
                 label: "XPath",
                 value: xpath,
-                unique: isUniqueXPath(xpath)
+                unique: isUniqueXPath(xpath, doc)
             }
         ];
     }
 
-    function recommendedLocator(el) {
+    function recommendedLocator(el, doc = el.ownerDocument) {
 
-        const ranked = getLocatorCandidates(el);
+        const ranked = getLocatorCandidates(el, doc);
         return ranked.find(candidate => candidate.value && candidate.unique) || ranked[ranked.length - 1];
     }
 
@@ -717,17 +730,47 @@ select.field{
 `;
     }
 
+    function getFrameChain(el) {
+
+        const chain = [];
+        let currentWindow = el.ownerDocument.defaultView;
+
+        while (currentWindow && currentWindow !== window.top) {
+
+            const frameEl = currentWindow.frameElement;
+            if (!frameEl) break;
+
+            const selector = uniqueCss(frameEl, frameEl.ownerDocument);
+            chain.unshift(selector);
+            currentWindow = frameEl.ownerDocument.defaultView;
+        }
+
+        return chain;
+    }
+
+    function toPlaywrightFrameLocator(frameChain, selector) {
+
+        if (!frameChain.length) return `page.locator("${selector}")`;
+
+        const framePart = frameChain.map(path => `.frameLocator("${path}")`).join("");
+        return `page${framePart}.locator("${selector}")`;
+    }
+
     /* =========================
        PANEL
     ========================= */
 
     function openPanel(el) {
 
-        const css = uniqueCss(el);
-        const xpath = uniqueXPath(el);
+        const sourceDoc = el.ownerDocument;
+        const frameChain = getFrameChain(el);
+        const framePathText = frameChain.length ? frameChain.join("\n") : "Top document";
+
+        const css = uniqueCss(el, sourceDoc);
+        const xpath = uniqueXPath(el, sourceDoc);
         const xpathAbsolute = absoluteXPath(el);
-        const recommended = recommendedLocator(el);
-        const rankedLocators = getLocatorCandidates(el);
+        const recommended = recommendedLocator(el, sourceDoc);
+        const rankedLocators = getLocatorCandidates(el, sourceDoc);
 
         const id = el.id || "";
         const name = el.getAttribute("name") || "";
@@ -754,10 +797,11 @@ ${field("Locator Uniqueness Check", rankedLocators
 ${field("CSS Selector", css)}
 ${field("XPath (recommended)", xpath)}
 ${field("XPath (absolute)", xpathAbsolute)}
+${field("Frame Path", framePathText)}
 </div>
 
 <div class="picker-content" id="dom" style="display:none">
-<div class="tree">${buildTree(document.documentElement, el)}</div>
+<div class="tree">${buildTree(sourceDoc.documentElement, el)}</div>
 </div>
 
 <div class="picker-content" id="attr" style="display:none">
@@ -817,7 +861,7 @@ ${field("Semantic Context", semanticContext(el))}
             wait: `new WebDriverWait(driver, Duration.ofSeconds(10))
 .until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("${css}")));`,
 
-            playwright: `const el = page.locator("${css}");`,
+            playwright: `const el = ${toPlaywrightFrameLocator(frameChain, css)};`,
             cypress: `cy.get("${recommended.value || css}").should("be.visible");`
         };
 
@@ -848,8 +892,8 @@ ${field("Semantic Context", semanticContext(el))}
             };
         });
 
-        document.getElementById("ui-picker-panel")?.remove();
-        document.body.appendChild(panel);
+        hostDocument.getElementById("ui-picker-panel")?.remove();
+        hostDocument.body.appendChild(panel);
 
         setTimeout(() => {
 
@@ -885,32 +929,75 @@ ${field("Semantic Context", semanticContext(el))}
        EVENTS
     ========================= */
 
-    document.addEventListener("mouseover", e => {
+    function shouldIgnoreTarget(target) {
+        return !!(
+            target.closest("#ui-picker-panel") ||
+            target.closest("#ui-picker-toggle")
+        );
+    }
 
-        if (!pickerEnabled) return;
+    function registerDocument(targetDocument) {
 
-        if (
-            e.target.closest("#ui-picker-panel") ||
-            e.target.closest("#ui-picker-toggle")
-        ) return;
+        if (!targetDocument || trackedDocuments.has(targetDocument)) return;
 
-        showHighlight(e.target);
-    });
+        trackedDocuments.add(targetDocument);
 
-    document.addEventListener("mousedown", e => {
+        targetDocument.addEventListener("mouseover", e => {
 
-        if (!pickerEnabled) return;
+            if (!pickerEnabled) return;
+            if (shouldIgnoreTarget(e.target)) return;
 
-        if (
-            e.target.closest("#ui-picker-panel") ||
-            e.target.closest("#ui-picker-toggle")
-        ) return;
+            showHighlight(e.target);
+        });
 
-        e.preventDefault();
-        e.stopPropagation();
+        targetDocument.addEventListener("mousedown", e => {
 
-        openPanel(e.target);
+            if (!pickerEnabled) return;
+            if (shouldIgnoreTarget(e.target)) return;
 
-    }, true);
+            e.preventDefault();
+            e.stopPropagation();
+
+            openPanel(e.target);
+
+        }, true);
+
+        targetDocument.querySelectorAll("iframe, frame").forEach(registerFrame);
+
+        const observer = new MutationObserver(records => {
+            records.forEach(record => {
+                record.addedNodes.forEach(node => {
+                    if (!(node instanceof Element)) return;
+
+                    if (node.matches("iframe, frame")) registerFrame(node);
+                    node.querySelectorAll?.("iframe, frame").forEach(registerFrame);
+                });
+            });
+        });
+
+        observer.observe(targetDocument.documentElement, {
+            childList: true,
+            subtree: true
+        });
+    }
+
+    function registerFrame(frameEl) {
+
+        frameEl.addEventListener("load", () => {
+            try {
+                registerDocument(frameEl.contentDocument);
+            } catch (_) {
+                // Cross-origin iframe is not accessible for DOM inspection.
+            }
+        });
+
+        try {
+            registerDocument(frameEl.contentDocument);
+        } catch (_) {
+            // Cross-origin iframe is not accessible for DOM inspection.
+        }
+    }
+
+    registerDocument(hostDocument);
 
 })();
