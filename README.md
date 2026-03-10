@@ -13,4 +13,7 @@ V1.0
 * Add @FindBy Selenium locator snippets to the code tab
 * Make the UI element picker better at selecting meaningful targets inside rich components such as date/time pickers, tabs, grids, dialogs, toasts and other composite controls.
 * Ensure inputs with date/time variants (time, date, datetime-local, week, month) are recognized as interactive elements for highlighting and selection.
-* Prefer returning a semantic container for compound widgets so the picker opens a useful panel for complex nested UI patterns.
+* Make placeholder-based locators visible even when they are not unique so users can copy a usable selector instead of the picker hiding it.
+* Improve the picker so hover and click resolve to the actual interactive element (including ARIA-based widgets and label-linked controls) for more reliable locators.
+* Ensure inputs with date/time variants (time, date, datetime-local, week, month) are recognized as interactive elements for highlighting and selection.
+* Make the UI element picker better at selecting meaningful targets inside rich components such as date/time pickers, tabs, grids, dialogs, toasts and other composite controls.
