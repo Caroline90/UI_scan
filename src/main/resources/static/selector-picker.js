@@ -392,7 +392,7 @@ select.field{
 
     function uniqueCss(el, doc = el.ownerDocument) {
 
-        if (el.id) return "#" + CSS.escape(el.id);
+        if (el.id && !/\d/.test(el.id)) return "#" + CSS.escape(el.id);
 
         let path = [];
 
@@ -618,6 +618,10 @@ select.field{
         const id = el.id || "";
         const name = el.getAttribute("name") || "";
         const placeholder = el.getAttribute("placeholder") || "";
+        const hasNumericId = /\d/.test(id);
+        const isDisabled = el.matches(":disabled") || el.getAttribute("aria-disabled") === "true";
+        const isHidden = el.hasAttribute("hidden") || el.getAttribute("aria-hidden") === "true";
+        const isBlocked = el.hasAttribute("inert") || el.getAttribute("aria-busy") === "true";
         const css = uniqueCss(el, doc);
         const xpath = uniqueXPath(el, doc);
 
@@ -632,7 +636,8 @@ select.field{
                 key: "id",
                 label: "ID",
                 value: id ? `#${CSS.escape(id)}` : "",
-                unique: id ? isUniqueCss(`#${CSS.escape(id)}`, doc) : false
+                unique: id ? isUniqueCss(`#${CSS.escape(id)}`, doc) : false,
+                unstable: hasNumericId
             },
             {
                 key: "name",
@@ -657,6 +662,30 @@ select.field{
                 label: "XPath",
                 value: xpath,
                 unique: isUniqueXPath(xpath, doc)
+            },
+            {
+                key: "disabled",
+                label: "Disabled State",
+                value: isDisabled ? `${el.tagName.toLowerCase()}:disabled` : "",
+                unique: isDisabled ? isUniqueCss(`${el.tagName.toLowerCase()}:disabled`, doc) : false
+            },
+            {
+                key: "hidden",
+                label: "Hidden State",
+                value: isHidden ? `${el.tagName.toLowerCase()}[hidden], ${el.tagName.toLowerCase()}[aria-hidden=\"true\"]` : "",
+                unique: isHidden
+                    ? isUniqueCss(`${el.tagName.toLowerCase()}[hidden]`, doc)
+                    || isUniqueCss(`${el.tagName.toLowerCase()}[aria-hidden=\"true\"]`, doc)
+                    : false
+            },
+            {
+                key: "blocked",
+                label: "Blocked State",
+                value: isBlocked ? `${el.tagName.toLowerCase()}[inert], ${el.tagName.toLowerCase()}[aria-busy=\"true\"]` : "",
+                unique: isBlocked
+                    ? isUniqueCss(`${el.tagName.toLowerCase()}[inert]`, doc)
+                    || isUniqueCss(`${el.tagName.toLowerCase()}[aria-busy=\"true\"]`, doc)
+                    : false
             }
         ];
     }
@@ -664,7 +693,11 @@ select.field{
     function recommendedLocator(el, doc = el.ownerDocument) {
 
         const ranked = getLocatorCandidates(el, doc);
+        const stableUnique = ranked.find(candidate => candidate.value && candidate.unique && !candidate.unstable);
+        if (stableUnique) return stableUnique;
+
         return ranked.find(candidate => candidate.value && candidate.unique)
+            || ranked.find(candidate => candidate.value && !candidate.unstable)
             || ranked.find(candidate => candidate.value)
             || ranked[ranked.length - 1];
     }
@@ -834,7 +867,7 @@ select.field{
 <div class="picker-content" id="loc">
 ${field(`Recommended Locator (${recommended.key})`, recommended.value)}
 ${field("Locator Uniqueness Check", rankedLocators
-            .map(l => `${l.label}: ${l.value || "N/A"} ${l.unique ? "✅ unique" : "❌ not unique"}`)
+            .map(l => `${l.label}: ${l.value || "N/A"} ${l.unique ? "✅ unique" : "❌ not unique"}${l.unstable ? " ⚠️ dynamic id" : ""}`)
             .join("\n"))}
 ${field("CSS Selector", css)}
 ${field("XPath (recommended)", xpath)}
