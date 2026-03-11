@@ -1190,7 +1190,7 @@ ${field("Semantic Context", semanticContext(el))}
             hideHighlight(targetDocument);
         });
 
-        targetDocument.addEventListener("mousedown", e => {
+        const handleSelectionEvent = e => {
 
             if (!pickerEnabled) return;
 
@@ -1207,7 +1207,9 @@ ${field("Semantic Context", semanticContext(el))}
 
             openPanel(resolvedTarget);
 
-        }, true);
+        };
+
+        targetDocument.addEventListener("pointerdown", handleSelectionEvent, true);
 
         targetDocument.querySelectorAll("iframe, frame").forEach(registerFrame);
 
