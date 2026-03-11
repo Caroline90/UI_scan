@@ -17,3 +17,4 @@ V1.0
 * Improve the picker so hover and click resolve to the actual interactive element (including ARIA-based widgets and label-linked controls) for more reliable locators.
 * Ensure inputs with date/time variants (time, date, datetime-local, week, month) are recognized as interactive elements for highlighting and selection.
 * Make the UI element picker better at selecting meaningful targets inside rich components such as date/time pickers, tabs, grids, dialogs, toasts and other composite controls.
+* Allow the selector picker to capture user selections on elements that block normal mouse interactions (for example disabled or read-only controls) so locators can be generated for non-clickable elements.
