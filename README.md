@@ -1,7 +1,7 @@
 1. Start the program.
 2. Open the session builder on http://localhost:8090/.
 3. Confirm the generated Swagger URL and bookmarklet use the desired port (default is 8090 and can be changed in the UI).
-4. Enter the Xray ticket, target URL, and the step details you want to keep recorded.
+4. Enter the Xray ticket and target URL, then use **Add step** to create step cards for the details you want to keep recorded.
 5. Save the generated bookmarklet as a browser favorite.
 6. Open the page you want to test and launch the bookmarklet from favorites.
 7. If you captured screenshots, upload them back into the session builder to download renamed copies with the Xray ticket and step number in the filename.
