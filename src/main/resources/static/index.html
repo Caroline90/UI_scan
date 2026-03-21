@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI Picker Session Builder</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #10141b;
+            --panel: #19202b;
+            --panel-alt: #222c3b;
+            --border: #334155;
+            --text: #e5edf7;
+            --muted: #9fb0c8;
+            --accent: #4f9cff;
+            --accent-strong: #2d7df5;
+            --success: #2fbf71;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: linear-gradient(180deg, #0b1016 0%, var(--bg) 100%);
+            color: var(--text);
+        }
+
+        .page {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 32px 20px 56px;
+        }
+
+        .hero {
+            margin-bottom: 24px;
+        }
+
+        .hero h1 {
+            margin: 0 0 10px;
+            font-size: clamp(2rem, 4vw, 3rem);
+        }
+
+        .hero p {
+            margin: 0;
+            color: var(--muted);
+            max-width: 900px;
+            line-height: 1.6;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .panel {
+            background: rgba(25, 32, 43, 0.96);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+            padding: 20px;
+        }
+
+        .panel h2,
+        .panel h3 {
+            margin-top: 0;
+        }
+
+        .panel p,
+        .panel li {
+            color: var(--muted);
+            line-height: 1.55;
+        }
+
+        .fields {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-size: 0.92rem;
+            font-weight: 600;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #0f1723;
+            color: var(--text);
+            padding: 12px 14px;
+            font: inherit;
+        }
+
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        button,
+        .button-link {
+            border: none;
+            border-radius: 999px;
+            background: var(--accent);
+            color: white;
+            font-weight: 700;
+            padding: 11px 18px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button.secondary,
+        .button-link.secondary {
+            background: #334155;
+        }
+
+        button.ghost {
+            background: transparent;
+            border: 1px solid var(--border);
+        }
+
+        button:hover,
+        .button-link:hover {
+            background: var(--accent-strong);
+        }
+
+        button.secondary:hover,
+        .button-link.secondary:hover {
+            background: #475569;
+        }
+
+        button.ghost:hover {
+            background: rgba(79, 156, 255, 0.12);
+        }
+
+        .code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+            background: #0d1420;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .step-card,
+        .shot-card {
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            background: rgba(15, 23, 35, 0.9);
+        }
+
+        .step-head,
+        .shot-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .step-head strong,
+        .shot-head strong {
+            font-size: 1.05rem;
+        }
+
+        .step-list,
+        .shot-list {
+            display: grid;
+            gap: 14px;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.92rem;
+            color: var(--muted);
+        }
+
+        .status::before {
+            content: "";
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+
+        .warn::before {
+            background: var(--warning);
+        }
+
+        .compact {
+            min-height: 72px;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            padding: 7px 12px;
+            color: var(--muted);
+            font-size: 0.92rem;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        .footer-note {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+
+        @media (max-width: 720px) {
+            .page {
+                padding: 24px 16px 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+<main class="page">
+    <section class="hero">
+        <h1>UI Picker Session Builder</h1>
+        <p>
+            Configure the endpoint port once, keep every test input recorded, build multi-step notes with multiple textboxes,
+            and rename screenshot exports with an Xray ticket number so each download is traceable.
+        </p>
+    </section>
+
+    <section class="grid">
+        <div class="panel">
+            <h2>1. Connection & ticket settings</h2>
+            <div class="fields">
+                <div class="field">
+                    <label for="port">Endpoint port</label>
+                    <input id="port" name="port" type="number" min="1" max="65535" value="8090">
+                </div>
+                <div class="field">
+                    <label for="ticket">Xray ticket number</label>
+                    <input id="ticket" name="ticket" type="text" placeholder="XRAY-123">
+                </div>
+                <div class="field">
+                    <label for="targetUrl">Target page URL</label>
+                    <input id="targetUrl" name="targetUrl" type="url" placeholder="https://example.test/form">
+                </div>
+                <div class="field">
+                    <label for="environment">Environment / notes</label>
+                    <input id="environment" name="environment" type="text" placeholder="QA, staging, local...">
+                </div>
+            </div>
+
+            <div class="button-row">
+                <button id="resetConfig" type="button" class="secondary">Reset to defaults</button>
+            </div>
+
+            <h3>Generated endpoint details</h3>
+            <div class="pill" id="baseUrlPill"></div>
+            <div class="pill" id="swaggerPill"></div>
+            <div class="pill" id="scriptPill"></div>
+
+            <h3>Bookmarklet</h3>
+            <p>Save this as a browser favorite. It always uses port <strong>8090</strong> by default, but updates immediately when the port changes.</p>
+            <div class="code" id="bookmarkletOutput"></div>
+        </div>
+
+        <div class="panel">
+            <h2>2. Required test steps</h2>
+            <p>Add as many step cards as you need. Each step has multiple textboxes, and every change is persisted automatically.</p>
+            <div id="steps" class="step-list"></div>
+            <div class="button-row">
+                <button id="addStep" type="button">Add step</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="grid" style="margin-top: 20px;">
+        <div class="panel">
+            <h2>3. Recorded inputs</h2>
+            <p class="status">All website inputs are tracked in local storage on every change.</p>
+            <textarea id="recordedData" readonly></textarea>
+            <div class="button-row">
+                <button id="exportJson" type="button">Download session JSON</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>4. Screenshot export naming</h2>
+            <p>
+                Upload screenshot files here if you want renamed copies. Each downloaded file name will include the Xray ticket,
+                step number, and step title so you can see which ticket and step the screenshot belongs to.
+            </p>
+            <div class="field">
+                <label for="screenshots">Screenshot files</label>
+                <input id="screenshots" type="file" accept="image/*" multiple>
+            </div>
+            <div id="shots" class="shot-list" style="margin-top: 14px;"></div>
+            <div class="button-row">
+                <button id="downloadShots" type="button">Download renamed copies</button>
+                <button id="exportManifest" type="button" class="secondary">Download CSV manifest</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel" style="margin-top: 20px;">
+        <h2>Recommended usage flow</h2>
+        <ol>
+            <li>Start the application. It runs on port <strong>8090</strong> unless you change it here.</li>
+            <li>Open the generated Swagger URL or bookmarklet details below.</li>
+            <li>Enter the Xray ticket and target page before you start documenting the flow.</li>
+            <li>Create one step card per action. Use the title, action, expected result, test data, and notes textboxes.</li>
+            <li>Use the bookmarklet on the target page to launch the selector picker script from the configured port.</li>
+            <li>After capturing screenshots, upload them here and download renamed copies that include the Xray ticket and step number.</li>
+            <li>Export the full session JSON to keep every input value in one file.</li>
+        </ol>
+        <p class="footer-note">
+            This page stores the current session in browser local storage so a page refresh does not wipe your entries.
+        </p>
+    </section>
+</main>
+
+<script>
+    const STORAGE_KEY = "ui-picker-session-builder";
+    const DEFAULT_STATE = {
+        port: "8090",
+        ticket: "",
+        targetUrl: "",
+        environment: "",
+        steps: [
+            {title: "Open target page", action: "", expected: "", testData: "", notes: ""},
+            {title: "Interact with first form field", action: "", expected: "", testData: "", notes: ""}
+        ],
+        screenshotPlans: []
+    };
+
+    let state = loadState();
+    let screenshotFiles = [];
+
+    const portInput = document.getElementById("port");
+    const ticketInput = document.getElementById("ticket");
+    const targetUrlInput = document.getElementById("targetUrl");
+    const environmentInput = document.getElementById("environment");
+    const stepsContainer = document.getElementById("steps");
+    const shotsContainer = document.getElementById("shots");
+    const recordedData = document.getElementById("recordedData");
+    const bookmarkletOutput = document.getElementById("bookmarkletOutput");
+    const baseUrlPill = document.getElementById("baseUrlPill");
+    const swaggerPill = document.getElementById("swaggerPill");
+    const scriptPill = document.getElementById("scriptPill");
+
+    function loadState() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return structuredClone(DEFAULT_STATE);
+            const parsed = JSON.parse(raw);
+            return {
+                ...structuredClone(DEFAULT_STATE),
+                ...parsed,
+                steps: Array.isArray(parsed.steps) && parsed.steps.length ? parsed.steps : structuredClone(DEFAULT_STATE.steps),
+                screenshotPlans: Array.isArray(parsed.screenshotPlans) ? parsed.screenshotPlans : []
+            };
+        } catch (error) {
+            console.warn("Failed to load saved state.", error);
+            return structuredClone(DEFAULT_STATE);
+        }
+    }
+
+    function saveState() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        refreshUi();
+    }
+
+    function sanitizePort(value) {
+        const parsed = Number.parseInt(String(value || "").trim(), 10);
+        if (!Number.isFinite(parsed) || parsed < 1 || parsed > 65535) {
+            return DEFAULT_STATE.port;
+        }
+        return String(parsed);
+    }
+
+    function slugify(value, fallback = "step") {
+        const slug = String(value || "")
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
+        return slug || fallback;
+    }
+
+    function currentBaseUrl() {
+        return `${window.location.protocol}//${window.location.hostname}:${sanitizePort(state.port)}`;
+    }
+
+    function scriptUrl() {
+        const ticket = encodeURIComponent(state.ticket || "");
+        return `${currentBaseUrl()}/selector-picker.js?ticket=${ticket}`;
+    }
+
+    function bookmarkletCode() {
+        const url = scriptUrl();
+        return `javascript:(function(){var s=document.createElement('script');s.src='${url}&_=' + Date.now();document.body.appendChild(s);})();`;
+    }
+
+    function buildRecordedSnapshot() {
+        return {
+            savedAt: new Date().toISOString(),
+            config: {
+                port: sanitizePort(state.port),
+                ticket: state.ticket,
+                targetUrl: state.targetUrl,
+                environment: state.environment,
+                baseUrl: currentBaseUrl(),
+                swaggerUrl: `${currentBaseUrl()}/swagger-ui.html`,
+                scriptUrl: scriptUrl()
+            },
+            steps: state.steps.map((step, index) => ({
+                stepNumber: index + 1,
+                ...step
+            })),
+            screenshots: state.screenshotPlans.map((plan, index) => ({
+                index: index + 1,
+                ...plan
+            }))
+        };
+    }
+
+    function renderSteps() {
+        stepsContainer.innerHTML = "";
+
+        state.steps.forEach((step, index) => {
+            const card = document.createElement("article");
+            card.className = "step-card";
+            card.innerHTML = `
+                <div class="step-head">
+                    <strong>Step ${index + 1}</strong>
+                    <button type="button" class="ghost" data-remove-step="${index}">Remove</button>
+                </div>
+                <div class="fields">
+                    <div class="field">
+                        <label for="step-title-${index}">Step title</label>
+                        <input id="step-title-${index}" data-step-field="title" data-step-index="${index}" type="text" value="${escapeHtml(step.title)}" placeholder="Enter a short step title">
+                    </div>
+                    <div class="field">
+                        <label for="step-data-${index}">Test data / inputs</label>
+                        <textarea id="step-data-${index}" data-step-field="testData" data-step-index="${index}" class="compact" placeholder="Record field values, test accounts, or input combinations">${escapeHtml(step.testData)}</textarea>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="step-action-${index}">Action</label>
+                    <textarea id="step-action-${index}" data-step-field="action" data-step-index="${index}" placeholder="Describe the exact action to perform">${escapeHtml(step.action)}</textarea>
+                </div>
+                <div class="field">
+                    <label for="step-expected-${index}">Expected result</label>
+                    <textarea id="step-expected-${index}" data-step-field="expected" data-step-index="${index}" placeholder="Describe the expected UI behavior">${escapeHtml(step.expected)}</textarea>
+                </div>
+                <div class="field">
+                    <label for="step-notes-${index}">Notes</label>
+                    <textarea id="step-notes-${index}" data-step-field="notes" data-step-index="${index}" class="compact" placeholder="Optional notes, blockers, or follow-up observations">${escapeHtml(step.notes)}</textarea>
+                </div>
+            `;
+            stepsContainer.appendChild(card);
+        });
+    }
+
+    function renderScreenshots() {
+        if (!screenshotFiles.length) {
+            shotsContainer.innerHTML = `<p class="muted">No screenshot files selected yet.</p>`;
+            state.screenshotPlans = [];
+            return;
+        }
+
+        state.screenshotPlans = screenshotFiles.map((file, index) => {
+            const existing = state.screenshotPlans[index] || {};
+            const stepIndex = Number.isInteger(existing.stepIndex) ? existing.stepIndex : Math.min(index, Math.max(state.steps.length - 1, 0));
+            const step = state.steps[stepIndex] || state.steps[0] || {title: "capture"};
+            const safeTicket = slugify(state.ticket || "no-ticket", "no-ticket");
+            const safeTitle = slugify(step.title || `step-${stepIndex + 1}`);
+            const extension = file.name.includes(".") ? file.name.slice(file.name.lastIndexOf(".")) : ".png";
+            const filename = `${safeTicket}_step-${String(stepIndex + 1).padStart(2, "0")}_${safeTitle}${extension}`;
+
+            return {
+                originalName: file.name,
+                stepIndex,
+                generatedName: filename
+            };
+        });
+
+        shotsContainer.innerHTML = "";
+
+        state.screenshotPlans.forEach((plan, index) => {
+            const card = document.createElement("article");
+            card.className = "shot-card";
+
+            const options = state.steps.map((step, stepIndex) => {
+                const selected = stepIndex === plan.stepIndex ? "selected" : "";
+                return `<option value="${stepIndex}" ${selected}>Step ${stepIndex + 1}: ${escapeHtml(step.title || `Step ${stepIndex + 1}`)}</option>`;
+            }).join("");
+
+            card.innerHTML = `
+                <div class="shot-head">
+                    <strong>Screenshot ${index + 1}</strong>
+                    <span class="muted">${escapeHtml(plan.originalName)}</span>
+                </div>
+                <div class="fields">
+                    <div class="field">
+                        <label for="shot-step-${index}">Assigned step</label>
+                        <select id="shot-step-${index}" data-shot-index="${index}">
+                            ${options}
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Generated file name</label>
+                        <div class="code">${escapeHtml(plan.generatedName)}</div>
+                    </div>
+                </div>
+            `;
+            shotsContainer.appendChild(card);
+        });
+    }
+
+    function escapeHtml(value) {
+        return String(value || "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;");
+    }
+
+    function refreshUi() {
+        portInput.value = sanitizePort(state.port);
+        ticketInput.value = state.ticket;
+        targetUrlInput.value = state.targetUrl;
+        environmentInput.value = state.environment;
+
+        baseUrlPill.textContent = `Base URL: ${currentBaseUrl()}`;
+        swaggerPill.textContent = `Swagger: ${currentBaseUrl()}/swagger-ui.html`;
+        scriptPill.textContent = `Script: ${scriptUrl()}`;
+        bookmarkletOutput.textContent = bookmarkletCode();
+
+        renderSteps();
+        renderScreenshots();
+        recordedData.value = JSON.stringify(buildRecordedSnapshot(), null, 2);
+    }
+
+    function updateTopLevelField(event) {
+        const {name, value} = event.target;
+        state[name] = name === "port" ? sanitizePort(value) : value;
+        saveState();
+    }
+
+    function downloadBlob(filename, blob) {
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = filename;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    portInput.addEventListener("input", updateTopLevelField);
+    ticketInput.addEventListener("input", updateTopLevelField);
+    targetUrlInput.addEventListener("input", updateTopLevelField);
+    environmentInput.addEventListener("input", updateTopLevelField);
+
+    document.getElementById("resetConfig").addEventListener("click", () => {
+        state = structuredClone(DEFAULT_STATE);
+        screenshotFiles = [];
+        document.getElementById("screenshots").value = "";
+        saveState();
+    });
+
+    document.getElementById("addStep").addEventListener("click", () => {
+        state.steps.push({title: `New step ${state.steps.length + 1}`, action: "", expected: "", testData: "", notes: ""});
+        saveState();
+    });
+
+    stepsContainer.addEventListener("input", event => {
+        const stepIndex = Number.parseInt(event.target.dataset.stepIndex, 10);
+        const field = event.target.dataset.stepField;
+        if (!Number.isInteger(stepIndex) || !field || !state.steps[stepIndex]) return;
+        state.steps[stepIndex][field] = event.target.value;
+        saveState();
+    });
+
+    stepsContainer.addEventListener("click", event => {
+        const index = event.target.dataset.removeStep;
+        if (index === undefined) return;
+        state.steps.splice(Number.parseInt(index, 10), 1);
+        if (!state.steps.length) {
+            state.steps.push({title: "Open target page", action: "", expected: "", testData: "", notes: ""});
+        }
+        saveState();
+    });
+
+    document.getElementById("screenshots").addEventListener("change", event => {
+        screenshotFiles = Array.from(event.target.files || []);
+        saveState();
+    });
+
+    shotsContainer.addEventListener("change", event => {
+        const index = Number.parseInt(event.target.dataset.shotIndex, 10);
+        if (!Number.isInteger(index) || !state.screenshotPlans[index]) return;
+        state.screenshotPlans[index].stepIndex = Number.parseInt(event.target.value, 10);
+        saveState();
+    });
+
+    document.getElementById("downloadShots").addEventListener("click", () => {
+        screenshotFiles.forEach((file, index) => {
+            const plan = state.screenshotPlans[index];
+            if (!plan) return;
+            downloadBlob(plan.generatedName, file);
+        });
+    });
+
+    document.getElementById("exportManifest").addEventListener("click", () => {
+        const rows = ["original_name,generated_name,step_number,step_title,xray_ticket"];
+        state.screenshotPlans.forEach(plan => {
+            const step = state.steps[plan.stepIndex] || {title: ""};
+            rows.push([
+                JSON.stringify(plan.originalName),
+                JSON.stringify(plan.generatedName),
+                plan.stepIndex + 1,
+                JSON.stringify(step.title || ""),
+                JSON.stringify(state.ticket || "")
+            ].join(","));
+        });
+        downloadBlob(`${slugify(state.ticket || "ticket", "ticket")}_screenshot_manifest.csv`, new Blob([rows.join("\n")], {type: "text/csv;charset=utf-8"}));
+    });
+
+    document.getElementById("exportJson").addEventListener("click", () => {
+        const payload = JSON.stringify(buildRecordedSnapshot(), null, 2);
+        downloadBlob(`${slugify(state.ticket || "session", "session")}_session.json`, new Blob([payload], {type: "application/json;charset=utf-8"}));
+    });
+
+    refreshUi();
+</script>
+</body>
+</html>

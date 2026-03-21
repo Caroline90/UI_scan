@@ -1,9 +1,11 @@
-1. Start the program (pull the program from github)
-2. Check if swagger-ui is working on http://localhost:8080/swagger-ui/index.html
-3. Add the page to favourite
-4. in link paste: javascript:(function(){var s=document.createElement('script');s.src='http://localhost:8080/selector-picker.js';document.body.appendChild(s);})();
-5. Go to any page you what test
-6. Go to favourties and enable the plugin
+1. Start the program.
+2. Open the session builder on http://localhost:8090/.
+3. Confirm the generated Swagger URL and bookmarklet use the desired port (default is 8090 and can be changed in the UI).
+4. Enter the Xray ticket, target URL, and the step details you want to keep recorded.
+5. Save the generated bookmarklet as a browser favorite.
+6. Open the page you want to test and launch the bookmarklet from favorites.
+7. If you captured screenshots, upload them back into the session builder to download renamed copies with the Xray ticket and step number in the filename.
+8. Export the session JSON when you want a single file containing all recorded inputs.
 
 V1.0
 * Startup project
