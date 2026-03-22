@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI Picker Launcher</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #111827;
+            --panel: #1f2937;
+            --panel-alt: #243244;
+            --border: #374151;
+            --accent: #60a5fa;
+            --accent-strong: #3b82f6;
+            --text: #f9fafb;
+            --muted: #cbd5e1;
+            --success: #34d399;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: linear-gradient(160deg, var(--bg), #0b1220 70%);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        main {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 48px 20px 80px;
+        }
+
+        .hero {
+            background: rgba(31, 41, 55, 0.9);
+            border: 1px solid rgba(96, 165, 250, 0.25);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+        }
+
+        h1, h2 {
+            margin-top: 0;
+        }
+
+        p, li {
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 18px;
+            margin-top: 28px;
+        }
+
+        .card {
+            background: rgba(17, 24, 39, 0.75);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 20px;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(96, 165, 250, 0.16);
+            color: #dbeafe;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            margin-bottom: 16px;
+        }
+
+        .bookmarklet {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-decoration: none;
+            color: #fff;
+            background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-weight: 700;
+            margin-top: 8px;
+            min-width: 220px;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        button {
+            appearance: none;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: var(--panel-alt);
+            color: var(--text);
+            border-radius: 12px;
+            padding: 12px 16px;
+            cursor: pointer;
+            font: inherit;
+        }
+
+        button:hover, .bookmarklet:hover {
+            filter: brightness(1.06);
+        }
+
+        pre {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: #dbeafe;
+            min-height: 88px;
+        }
+
+        .status {
+            margin-top: 12px;
+            color: var(--success);
+            font-size: 14px;
+            min-height: 20px;
+        }
+
+        ol {
+            padding-left: 18px;
+        }
+    </style>
+</head>
+<body>
+<main>
+    <section class="hero">
+        <div class="pill">No browser extension required</div>
+        <h1>Launch the UI Picker without installing Chrome or Edge extensions</h1>
+        <p>
+            If your browser blocks extension installation, use one of the fallbacks below.
+            Both options load the same <code>selector-picker.js</code> script from this server, so the picker behavior stays the same.
+        </p>
+
+        <div class="grid">
+            <article class="card">
+                <h2>Option 1: Bookmarklet</h2>
+                <p>Drag the launcher to the bookmarks bar, then click it on any page where you want to inspect elements.</p>
+                <a id="bookmarklet-link" class="bookmarklet" href="#">UI Picker Bookmarklet</a>
+                <div class="actions">
+                    <button id="copy-bookmarklet" type="button">Copy bookmarklet code</button>
+                </div>
+                <div id="bookmarklet-status" class="status"></div>
+            </article>
+
+            <article class="card">
+                <h2>Option 2: DevTools console</h2>
+                <p>Paste the loader into the browser console when bookmarks are disabled by policy.</p>
+                <pre id="console-command"></pre>
+                <div class="actions">
+                    <button id="copy-console" type="button">Copy console command</button>
+                </div>
+                <div id="console-status" class="status"></div>
+            </article>
+        </div>
+    </section>
+
+    <section class="grid" style="margin-top: 24px;">
+        <article class="card">
+            <h2>How to use it</h2>
+            <ol>
+                <li>Start the Spring Boot application.</li>
+                <li>Open the target site in Chrome or Edge.</li>
+                <li>Run the bookmarklet or paste the console command.</li>
+                <li>Click <strong>Enable Picker</strong> and inspect the page as usual.</li>
+            </ol>
+        </article>
+        <article class="card">
+            <h2>Why this works</h2>
+            <p>
+                The fallback injects the same hosted picker bundle into the current page.
+                That means locator generation, ranked selectors, Cypress/Playwright snippets, and DOM inspection all remain unchanged.
+            </p>
+            <p>
+                Hosted script URL: <code id="script-url"></code>
+            </p>
+        </article>
+    </section>
+</main>
+<script>
+    (function () {
+        const scriptUrl = `${window.location.origin}/selector-picker.js`;
+        const bookmarkletCode = `javascript:(function(){var existing=document.getElementById('__ui_picker_loader__');if(existing){existing.remove();}var s=document.createElement('script');s.id='__ui_picker_loader__';s.src='${scriptUrl}?t='+Date.now();document.body.appendChild(s);})();`;
+        const consoleCommand = `(function(){var existing=document.getElementById('__ui_picker_loader__');if(existing){existing.remove();}var s=document.createElement('script');s.id='__ui_picker_loader__';s.src='${scriptUrl}?t='+Date.now();document.body.appendChild(s);})();`;
+
+        const bookmarkletLink = document.getElementById('bookmarklet-link');
+        const consoleCommandEl = document.getElementById('console-command');
+        const scriptUrlEl = document.getElementById('script-url');
+
+        bookmarkletLink.href = bookmarkletCode;
+        consoleCommandEl.textContent = consoleCommand;
+        scriptUrlEl.textContent = scriptUrl;
+
+        async function copyText(text, statusId, successMessage) {
+            const status = document.getElementById(statusId);
+            try {
+                await navigator.clipboard.writeText(text);
+                status.textContent = successMessage;
+            } catch (error) {
+                status.textContent = 'Clipboard access is blocked. Copy the text manually from this page.';
+            }
+        }
+
+        document.getElementById('copy-bookmarklet').addEventListener('click', () => {
+            copyText(bookmarkletCode, 'bookmarklet-status', 'Bookmarklet code copied. Add it as a bookmark URL in Chrome or Edge.');
+        });
+
+        document.getElementById('copy-console').addEventListener('click', () => {
+            copyText(consoleCommand, 'console-status', 'Console loader copied. Paste it into DevTools on the target page.');
+        });
+    })();
+</script>
+</body>
+</html>
